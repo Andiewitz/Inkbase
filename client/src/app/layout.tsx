@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Lobster_Two } from "next/font/google";
+import { Inter, Lobster_Two } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 const lobsterTwo = Lobster_Two({
@@ -27,7 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${lobsterTwo.variable} h-full antialiased`}
+      className={`${inter.variable} ${lobsterTwo.variable} h-full font-[family-name:var(--font-inter)] antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

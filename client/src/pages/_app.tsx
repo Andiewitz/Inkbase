@@ -1,15 +1,11 @@
-import { Geist, Geist_Mono, Lobster_Two } from "next/font/google";
+import { Inter, Lobster_Two } from "next/font/google";
 import type { AppProps } from "next/app";
 import "../app/globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 const lobsterTwo = Lobster_Two({
@@ -21,7 +17,7 @@ const lobsterTwo = Lobster_Two({
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <div
-      className={`min-h-screen ${geistSans.variable} ${geistMono.variable} ${lobsterTwo.variable}`}
+      className={`min-h-screen ${inter.variable} ${lobsterTwo.variable} font-[family-name:var(--font-inter)]`}
     >
       <Component {...pageProps} />
     </div>
