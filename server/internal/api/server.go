@@ -1,22 +1,16 @@
 package api
 
 import (
-	"encoding/json"
-	"log"
 	"net/http"
+
+	"inkbase/server/services/health"
 )
 
 func New() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/health", handleHealth)
+
+	health := health.NewService()
+	mux.HandleFunc("GET /api/health", handleHealth(health))
 
 	return mux
-}
-
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(v); err != nil {
-		log.Printf("encode response: %v", err)
-	}
 }

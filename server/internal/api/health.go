@@ -2,12 +2,13 @@ package api
 
 import (
 	"net/http"
-	"time"
+
+	"inkbase/server/services/health"
+	"inkbase/server/shared"
 )
 
-func handleHealth(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{
-		"status": "ok",
-		"time":   time.Now().UTC(),
-	})
+func handleHealth(healthSvc *health.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		shared.WriteJSON(w, http.StatusOK, healthSvc.Check())
+	}
 }
