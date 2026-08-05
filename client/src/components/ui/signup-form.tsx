@@ -3,9 +3,23 @@ import type { FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Loader2, Lock, Mail } from "lucide-react";
+import { motion } from "framer-motion";
 
 const LEFT_IMAGE =
   "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1200&q=80";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1 },
+};
 
 export default function SignupForm() {
   const [loading, setLoading] = useState(false);
@@ -56,21 +70,27 @@ export default function SignupForm() {
       </div>
 
       <div className="flex w-full flex-col items-center justify-center bg-white px-6 md:w-1/2">
-        <form
+        <motion.form
           onSubmit={handleSubmit}
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
           className="flex w-80 flex-col items-center justify-center md:w-96"
         >
-          <h2
+          <motion.h2
+            variants={itemVariants}
             className="text-gray-900 leading-tight"
             style={{ fontFamily: "var(--font-lobster), cursive", fontSize: "clamp(2rem, 3.5vw, 3.5rem)" }}
           >
             Join Inkbase
-          </h2>
-          <p className="mt-3 text-sm text-gray-500">
-            Create your account to start writing and collaborating
-          </p>
+          </motion.h2>
 
-          <button
+          <motion.p variants={itemVariants} className="mt-3 text-sm text-gray-500">
+            Create your account to start writing and collaborating
+          </motion.p>
+
+          <motion.button
+            variants={itemVariants}
             type="button"
             className="mt-8 flex h-12 w-full items-center justify-center gap-3 rounded-full border border-gray-300 bg-gray-50 transition-colors hover:bg-gray-100"
           >
@@ -95,17 +115,20 @@ export default function SignupForm() {
             <span className="text-sm font-medium text-gray-700">
               Sign up with Google
             </span>
-          </button>
+          </motion.button>
 
-          <div className="my-5 flex w-full items-center gap-4">
+          <motion.div variants={itemVariants} className="my-5 flex w-full items-center gap-4">
             <div className="h-px w-full bg-gray-200" />
             <p className="w-full text-nowrap text-sm text-gray-400">
               or sign up with email
             </p>
             <div className="h-px w-full bg-gray-200" />
-          </div>
+          </motion.div>
 
-          <div className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-full border border-gray-400 bg-white pl-6 shadow-sm transition-colors focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
+          <motion.div
+            variants={itemVariants}
+            className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-full border border-gray-400 bg-white pl-6 shadow-sm transition-colors focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600"
+          >
             <Mail className="h-4 w-4 shrink-0 text-gray-500" />
             <input
               type="email"
@@ -114,9 +137,9 @@ export default function SignupForm() {
               required
               className="h-full w-full bg-white text-sm text-gray-900 outline-none placeholder:text-gray-400"
             />
-          </div>
+          </motion.div>
 
-          <div className="mt-5 flex w-full flex-col gap-1.5">
+          <motion.div variants={itemVariants} className="mt-5 flex w-full flex-col gap-1.5">
             <div className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-full border border-gray-400 bg-white pl-6 shadow-sm transition-colors focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
               <Lock className="h-4 w-4 shrink-0 text-gray-500" />
               <input
@@ -131,9 +154,12 @@ export default function SignupForm() {
             <p className="pl-4 text-xs text-gray-500">
               Must be at least 8 characters
             </p>
-          </div>
+          </motion.div>
 
-          <div className="mt-6 flex w-full items-center gap-2 text-gray-600">
+          <motion.div
+            variants={itemVariants}
+            className="mt-6 flex w-full items-center gap-2 text-gray-600"
+          >
             <input
               className="h-4 w-4 rounded border-gray-300 accent-indigo-600"
               type="checkbox"
@@ -143,29 +169,34 @@ export default function SignupForm() {
             <label className="text-sm cursor-pointer select-none text-gray-600" htmlFor="terms">
               I agree to the{" "}
               <a className="text-indigo-600 hover:underline" href="#">
-                Terms & Conditions
+                Terms &amp; Conditions
               </a>
             </label>
-          </div>
+          </motion.div>
 
-          {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
+          {error && (
+            <motion.p variants={itemVariants} className="mt-4 text-sm text-red-500">
+              {error}
+            </motion.p>
+          )}
 
-          <button
+          <motion.button
+            variants={itemVariants}
             type="submit"
             disabled={loading}
             className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-indigo-600 font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-60"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {loading ? "Creating account…" : "Create account"}
-          </button>
+          </motion.button>
 
-          <p className="mt-4 text-sm text-gray-500">
+          <motion.p variants={itemVariants} className="mt-4 text-sm text-gray-500">
             Already have an account?{" "}
             <Link className="font-medium text-indigo-600 hover:underline" href="/auth/login">
               Sign in
             </Link>
-          </p>
-        </form>
+          </motion.p>
+        </motion.form>
       </div>
     </div>
   );
