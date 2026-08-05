@@ -54,7 +54,10 @@ export default function LoginForm() {
           onSubmit={handleSubmit}
           className="flex w-80 flex-col items-center justify-center md:w-96"
         >
-          <h2 className="text-4xl font-semibold tracking-tight text-gray-900">
+          <h2
+            className="text-gray-900 leading-tight"
+            style={{ fontFamily: "var(--font-lobster), cursive", fontSize: "clamp(2rem, 3.5vw, 3.5rem)" }}
+          >
             Sign in to Inkbase
           </h2>
           <p className="mt-3 text-sm text-gray-500">
