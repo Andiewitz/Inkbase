@@ -107,7 +107,7 @@ export default function SignupForm() {
             <input
               type="email"
               name="email"
-              placeholder="Email id"
+              placeholder="example@gmail.com"
               required
               className="h-full w-full bg-white text-sm text-gray-900 outline-none placeholder:text-gray-400"
             />
@@ -119,7 +119,7 @@ export default function SignupForm() {
               <input
                 type="password"
                 name="password"
-                placeholder="Password"
+                placeholder="••••••••"
                 minLength={8}
                 required
                 className="h-full w-full bg-white text-sm text-gray-900 outline-none placeholder:text-gray-400"

@@ -101,7 +101,7 @@ export default function LoginForm() {
             <input
               type="email"
               name="email"
-              placeholder="Email id"
+              placeholder="example@gmail.com"
               required
               className="h-full w-full bg-white text-sm text-gray-900 outline-none placeholder:text-gray-400"
             />
@@ -112,7 +112,7 @@ export default function LoginForm() {
             <input
               type="password"
               name="password"
-              placeholder="Password"
+              placeholder="••••••••"
               required
               className="h-full w-full bg-white text-sm text-gray-900 outline-none placeholder:text-gray-400"
             />
