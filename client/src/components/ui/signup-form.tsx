@@ -47,8 +47,21 @@ export default function SignupForm() {
     }
 
     try {
-      // TODO: POST to /api/auth/register once backend auth endpoint is ready
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Could not create account.");
+        setLoading(false);
+        return;
+      }
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        window.location.href = "/";
+      }
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

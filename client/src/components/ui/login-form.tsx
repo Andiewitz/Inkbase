@@ -41,8 +41,21 @@ export default function LoginForm() {
     }
 
     try {
-      // TODO: POST to /api/auth/login once the Go backend ships an auth endpoint.
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to sign in.");
+        setLoading(false);
+        return;
+      }
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        window.location.href = "/";
+      }
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
