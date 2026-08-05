@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Loader2, Lock, Mail, User } from "lucide-react";
+import { Loader2, Lock, Mail } from "lucide-react";
 
 const LEFT_IMAGE =
   "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1200&q=80";
@@ -17,12 +17,17 @@ export default function SignupForm() {
     setError(null);
 
     const form = new FormData(event.currentTarget);
-    const name = String(form.get("name") ?? "");
     const email = String(form.get("email") ?? "");
     const password = String(form.get("password") ?? "");
 
-    if (!name || !email || !password) {
+    if (!email || !password) {
       setError("Please fill in all fields.");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
       setLoading(false);
       return;
     }
@@ -55,11 +60,11 @@ export default function SignupForm() {
           onSubmit={handleSubmit}
           className="flex w-80 flex-col items-center justify-center md:w-96"
         >
-          <h2 className="text-4xl font-medium text-gray-900">
-            Create an account
+          <h2 className="text-4xl font-semibold tracking-tight text-gray-900">
+            Join Inkbase
           </h2>
           <p className="mt-3 text-sm text-gray-500">
-            Join Inkbase today! Please enter your details
+            Create your account to start writing and collaborating
           </p>
 
           <button
@@ -98,17 +103,6 @@ export default function SignupForm() {
           </div>
 
           <div className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-full border border-gray-400 bg-white pl-6 shadow-sm transition-colors focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
-            <User className="h-4 w-4 shrink-0 text-gray-500" />
-            <input
-              type="text"
-              name="name"
-              placeholder="Full Name"
-              required
-              className="h-full w-full bg-white text-sm text-gray-900 outline-none placeholder:text-gray-400"
-            />
-          </div>
-
-          <div className="mt-5 flex h-12 w-full items-center gap-2 overflow-hidden rounded-full border border-gray-400 bg-white pl-6 shadow-sm transition-colors focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
             <Mail className="h-4 w-4 shrink-0 text-gray-500" />
             <input
               type="email"
@@ -119,15 +113,21 @@ export default function SignupForm() {
             />
           </div>
 
-          <div className="mt-5 flex h-12 w-full items-center gap-2 overflow-hidden rounded-full border border-gray-400 bg-white pl-6 shadow-sm transition-colors focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
-            <Lock className="h-4 w-4 shrink-0 text-gray-500" />
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              required
-              className="h-full w-full bg-white text-sm text-gray-900 outline-none placeholder:text-gray-400"
-            />
+          <div className="mt-5 flex w-full flex-col gap-1.5">
+            <div className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-full border border-gray-400 bg-white pl-6 shadow-sm transition-colors focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
+              <Lock className="h-4 w-4 shrink-0 text-gray-500" />
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                minLength={8}
+                required
+                className="h-full w-full bg-white text-sm text-gray-900 outline-none placeholder:text-gray-400"
+              />
+            </div>
+            <p className="pl-4 text-xs text-gray-500">
+              Must be at least 8 characters
+            </p>
           </div>
 
           <div className="mt-6 flex w-full items-center gap-2 text-gray-600">

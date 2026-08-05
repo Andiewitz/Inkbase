@@ -54,11 +54,11 @@ export default function LoginForm() {
           onSubmit={handleSubmit}
           className="flex w-80 flex-col items-center justify-center md:w-96"
         >
-          <h2 className="text-4xl font-medium text-gray-900">
-            Sign in
+          <h2 className="text-4xl font-semibold tracking-tight text-gray-900">
+            Sign in to Inkbase
           </h2>
           <p className="mt-3 text-sm text-gray-500">
-            Welcome back! Please sign in to continue
+            Welcome back! Enter your details to access your workspace
           </p>
 
           <button
