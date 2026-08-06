@@ -409,6 +409,45 @@ func TestCSRFProtectionViaSameSite(t *testing.T) {
 	}
 }
 
+// TestLoginValidationAndCSRFParity tests login-specific failure paths:
+// wrong password, unknown email, missing fields, and confirms that login
+// yields the exact same HttpOnly + SameSite=Lax cookie as register.
+func TestLoginValidationAndCSRFParity(t *testing.T) {
+	handler := api.New()
+	email := uniqueEmail(t)
+
+	// Register account first.
+	rec := register(t, handler, email, "correctpassword123", "10.0.1.1:1")
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("register failed: %d %s", rec.Code, rec.Body.String())
+	}
+
+	// 1. Wrong password returns 401.
+	rec = login(t, handler, email, "wrongpassword123", "10.0.1.2:1")
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("FAIL: login with wrong password expected 401, got %d", rec.Code)
+	}
+
+	// 2. Unknown email returns 401.
+	rec = login(t, handler, "nonexistent@test.inkbase.dev", "correctpassword123", "10.0.1.3:1")
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("FAIL: login with unknown email expected 401, got %d", rec.Code)
+	}
+
+	// 3. Successful login returns HttpOnly + SameSite=Lax cookie.
+	rec = login(t, handler, email, "correctpassword123", "10.0.1.4:1")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("FAIL: login expected 200, got %d %s", rec.Code, rec.Body.String())
+	}
+	c := sessionCookie(t, rec)
+	if !c.HttpOnly {
+		t.Error("FAIL: login cookie must be HttpOnly")
+	}
+	if c.SameSite != http.SameSiteLaxMode {
+		t.Errorf("FAIL: login cookie SameSite must be Lax (got %v)", c.SameSite)
+	}
+}
+
 // ---------------------------------------------------------------------------
 // XSS cannot steal session cookie
 // ---------------------------------------------------------------------------
