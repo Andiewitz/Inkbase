@@ -3,6 +3,19 @@
 import { useLayoutEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { AnimatePresence, motion } from "framer-motion";
+import {
+  ArrowsRightLeftIcon,
+  DocumentIcon,
+  DocumentTextIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
+import {
+  DOCUMENTS,
+  FREE_TIER_MAX,
+} from "../components/documents/data";
+import { DocumentCard } from "../components/documents/document-card";
+import { NewDocumentCard } from "../components/documents/new-document-card";
+import type { DocumentItem } from "../components/documents/types";
 import { Bonjour } from "../components/ui/bonjour";
 import { OnboardingOverlay } from "../components/ui/onboarding";
 
@@ -10,195 +23,7 @@ import { OnboardingOverlay } from "../components/ui/onboarding";
 
 type Screen = "bonjour" | "onboarding" | "dashboard";
 
-interface BranchInfo {
-  name: string;
-  isEdit: boolean;
-  pendingChanges: number;
-}
-
-interface DocumentItem {
-  id: string;
-  title: string;
-  excerpt: string;
-  lastEdited: string;
-  wordCount: number;
-  branch: BranchInfo;
-}
-
-// ─── Document Data ─────────────────────────────────────────────────────────────
-
 const MOCK_WORKSPACE = { name: "My Workspace", plan: "Free Tier" };
-
-const DOCUMENTS: DocumentItem[] = [
-  {
-    id: "1",
-    title: "The Cassidy Chronicles: Part 1",
-    excerpt:
-      "The rain had not stopped since Tuesday. Below the elevated tracks of the 4th Avenue line, the streetlights reflected in long, shimmering ribbons across the wet asphalt. Mark pulled his collar up against the damp chill, watching the neon sign of the diner flicker and hum in the fog...",
-    lastEdited: "Opened Aug 2, 2026",
-    wordCount: 4820,
-    branch: { name: "edit", isEdit: true, pendingChanges: 14 },
-  },
-  {
-    id: "2",
-    title: "The Bronze and the Silver",
-    excerpt:
-      "CHAPTER 1 — THE MERCANTILE CODE\n\nIn the grand halls of the guild masters, gold was considered crude—a metal for soldiers and tax collectors. Silver was for scholars, and polished bronze was reserved for those who recorded the true history of the river kingdoms...",
-    lastEdited: "Opened Jul 23, 2026",
-    wordCount: 2340,
-    branch: { name: "main", isEdit: false, pendingChanges: 0 },
-  },
-  {
-    id: "3",
-    title: "Essay: Architecture of Solitude",
-    excerpt:
-      "When we look at the evolution of modern workspaces, we notice a subtle shift. The open office promised collaboration but delivered noise; the home office promised freedom but introduced isolation...",
-    lastEdited: "Opened Jul 8, 2026",
-    wordCount: 1940,
-    branch: { name: "edit", isEdit: true, pendingChanges: 3 },
-  },
-];
-
-const FREE_TIER_MAX = 3;
-
-// ─── Google Docs Style Document Preview Card ──────────────────────────────────
-
-function DocumentCard({
-  doc,
-  onClick,
-}: {
-  doc: DocumentItem;
-  onClick: () => void;
-}) {
-  return (
-    <motion.div
-      whileHover={{ y: -3 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.15 }}
-      onClick={onClick}
-      className="group cursor-pointer flex flex-col rounded-xl border border-gray-200 bg-white overflow-hidden shadow-xs hover:shadow-md hover:border-gray-300 transition-all"
-    >
-      {/* Paper Sheet Preview Area */}
-      <div className="relative aspect-[3/4] w-full bg-gray-50 border-b border-gray-100 p-4 overflow-hidden flex flex-col justify-start">
-        {/* Paper Document Representation */}
-        <div className="w-full h-full bg-white rounded-md border border-gray-200/80 shadow-xs p-3 flex flex-col space-y-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
-          <div className="h-2 w-3/4 bg-gray-800/80 rounded-xs mb-1" />
-          <div className="h-1.5 w-full bg-gray-300/70 rounded-xs" />
-          <div className="h-1.5 w-full bg-gray-300/70 rounded-xs" />
-          <div className="h-1.5 w-5/6 bg-gray-300/70 rounded-xs" />
-          <div className="h-1.5 w-full bg-gray-300/70 rounded-xs" />
-          <div className="h-1.5 w-4/5 bg-gray-300/70 rounded-xs" />
-
-          {/* Actual Micro Snippet Text Preview */}
-          <div className="pt-2 text-[9px] leading-[1.3] text-gray-500 line-clamp-6 select-none font-serif">
-            {doc.excerpt}
-          </div>
-
-          <div className="mt-auto pt-2 flex items-center justify-between border-t border-gray-100 text-[8px] text-gray-400 font-sans">
-            <span>{doc.wordCount} words</span>
-            <span
-              className={`font-semibold px-1 rounded ${
-                doc.branch.isEdit
-                  ? "bg-amber-100 text-amber-800"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              {doc.branch.name}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Card Bottom Meta (Google Docs Style) */}
-      <div className="p-3 bg-white flex items-start justify-between gap-2">
-        <div className="flex items-start gap-2.5 min-w-0">
-          {/* Docs Blue Page Icon */}
-          <div className="mt-0.5 shrink-0 text-blue-600">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-            </svg>
-          </div>
-
-          <div className="min-w-0">
-            <h4 className="text-xs font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
-              {doc.title}
-            </h4>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[11px] text-gray-400">{doc.lastEdited}</span>
-              {doc.branch.isEdit && (
-                <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700">
-                  {doc.branch.pendingChanges} edits
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* 3-dots Menu Button */}
-        <button
-          type="button"
-          onClick={(e) => e.stopPropagation()}
-          className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition"
-        >
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M8 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM8 4.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM8 14.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-          </svg>
-        </button>
-      </div>
-    </motion.div>
-  );
-}
-
-// ─── Start New Document Template Card ─────────────────────────────────────────
-
-function NewDocumentCard({
-  title,
-  subtitle,
-  icon,
-  onClick,
-  disabled,
-}: {
-  title: string;
-  subtitle?: string;
-  icon?: React.ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <div className="flex flex-col items-center">
-      <motion.button
-        type="button"
-        onClick={onClick}
-        disabled={disabled}
-        whileHover={disabled ? {} : { y: -2 }}
-        whileTap={disabled ? {} : { scale: 0.98 }}
-        className={`aspect-[3/4] w-full rounded-xl border flex items-center justify-center bg-white shadow-xs transition-all ${
-          disabled
-            ? "border-gray-200 opacity-50 cursor-not-allowed bg-gray-50"
-            : "border-gray-200 hover:border-blue-500 hover:shadow-md cursor-pointer"
-        }`}
-      >
-        {icon ? (
-          icon
-        ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-            </svg>
-          </div>
-        )}
-      </motion.button>
-      <span className="mt-2 text-xs font-medium text-gray-900 text-center truncate max-w-full">
-        {title}
-      </span>
-      {subtitle && (
-        <span className="text-[10px] text-gray-400 text-center truncate max-w-full">
-          {subtitle}
-        </span>
-      )}
-    </div>
-  );
-}
 
 // ─── Sidebar Component ────────────────────────────────────────────────────────
 
@@ -231,9 +56,9 @@ function Sidebar({
       {/* Navigation */}
       <nav className="mt-4 space-y-1">
         {[
-          { label: "Recent Documents", icon: "📄", active: true },
-          { label: "Branch Reviews", icon: "🔀", active: false },
-          { label: "Trash", icon: "🗑️", active: false },
+          { label: "Recent Documents", icon: DocumentTextIcon, active: true },
+          { label: "Branch Reviews", icon: ArrowsRightLeftIcon, active: false },
+          { label: "Trash", icon: TrashIcon, active: false },
         ].map((item) => (
           <button
             key={item.label}
@@ -243,7 +68,7 @@ function Sidebar({
                 : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
             }`}
           >
-            <span>{item.icon}</span>
+            <item.icon className="h-4 w-4 shrink-0" />
             <span>{item.label}</span>
           </button>
         ))}
@@ -270,7 +95,7 @@ function Sidebar({
                   : "text-gray-600 hover:bg-gray-50"
               }`}
             >
-              <span className="text-blue-500 shrink-0">📄</span>
+              <DocumentIcon className="h-4 w-4 shrink-0 text-blue-500" />
               <span className="truncate text-left">{doc.title}</span>
             </button>
           ))}
