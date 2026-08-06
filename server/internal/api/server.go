@@ -10,6 +10,7 @@ import (
 
 func New() http.Handler {
 	mux := http.NewServeMux()
+	store := newLimiterStore()
 
 	// Health
 	healthSvc := health.NewService()
@@ -27,5 +28,6 @@ func New() http.Handler {
 	// Auth — protected (RequireAuth reads the session cookie)
 	mux.Handle("GET /api/auth/me", RequireAuth(handleMe()))
 
-	return mux
+	// Rate limiter wraps the entire mux — every route is covered.
+	return RateLimit(store)(mux)
 }

@@ -45,12 +45,12 @@ func handleRegister(svc *auth.Service) http.HandlerFunc {
 			shared.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 			return
 		}
-		if req.Email == "" || req.Password == "" {
-			shared.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "email and password are required"})
+		if err := shared.ValidateEmail(req.Email); err != nil {
+			shared.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 			return
 		}
-		if len(req.Password) < 8 {
-			shared.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "password must be at least 8 characters"})
+		if err := shared.ValidatePassword(req.Password); err != nil {
+			shared.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -76,8 +76,14 @@ func handleLogin(svc *auth.Service) http.HandlerFunc {
 			shared.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 			return
 		}
-		if req.Email == "" || req.Password == "" {
-			shared.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "email and password are required"})
+		// On login, validate email format but don't enforce password complexity —
+		// the stored hash is the source of truth, not these rules.
+		if err := shared.ValidateEmail(req.Email); err != nil {
+			shared.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return
+		}
+		if err := shared.ValidateNonEmpty("password", req.Password); err != nil {
+			shared.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 			return
 		}
 
