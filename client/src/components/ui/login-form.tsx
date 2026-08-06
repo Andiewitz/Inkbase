@@ -52,11 +52,18 @@ export default function LoginForm() {
         setLoading(false);
         return;
       }
-      // Session cookie is set by the server — returning user flow clears onboarding flag.
-      if (typeof window !== "undefined") {
-        sessionStorage.removeItem("inkbase_show_onboarding");
+      // Session cookie is set by the server.
+      if (data.show_onboarding) {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("inkbase_show_onboarding", "true");
+        }
+        window.location.href = "/dashboard?onboarding=true";
+      } else {
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("inkbase_show_onboarding");
+        }
+        window.location.href = "/dashboard";
       }
-      window.location.href = "/dashboard";
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
