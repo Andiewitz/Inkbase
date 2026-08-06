@@ -9,8 +9,12 @@ export default function DashboardPage() {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    if (router.isReady) {
-      if (router.query.onboarding === "true") {
+    if (typeof window !== "undefined") {
+      const searchHasOnboarding = window.location.search.includes("onboarding=true");
+      const storageHasOnboarding = sessionStorage.getItem("inkbase_show_onboarding") === "true";
+      const routerHasOnboarding = router.query.onboarding === "true";
+
+      if (searchHasOnboarding || storageHasOnboarding || routerHasOnboarding) {
         setShowOnboarding(true);
       }
     }
@@ -18,12 +22,14 @@ export default function DashboardPage() {
 
   const handleCloseOnboarding = () => {
     setShowOnboarding(false);
-    // Clean up query param from URL without page reload
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("inkbase_show_onboarding");
+    }
     router.replace("/dashboard", undefined, { shallow: true });
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-white">
+    <div className="relative flex min-h-screen items-center justify-center bg-gray-50">
       {showOnboarding && <OnboardingOverlay onClose={handleCloseOnboarding} />}
 
       <div className="text-center">
@@ -33,7 +39,7 @@ export default function DashboardPage() {
         >
           Inkbase
         </h1>
-        <p className="mt-3 text-sm text-gray-400">Dashboard coming soon</p>
+        <p className="mt-3 text-sm text-gray-500">Welcome to your dashboard</p>
       </div>
     </div>
   );

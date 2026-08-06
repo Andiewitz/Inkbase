@@ -60,6 +60,9 @@ export default function SignupForm() {
       }
       // Session cookie is set by the server — check if account setup requires onboarding.
       if (data.show_onboarding) {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("inkbase_show_onboarding", "true");
+        }
         window.location.href = "/dashboard?onboarding=true";
       } else {
         window.location.href = "/dashboard";

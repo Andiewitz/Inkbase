@@ -52,7 +52,10 @@ export default function LoginForm() {
         setLoading(false);
         return;
       }
-      // Session cookie is set by the server — no token handling needed here.
+      // Session cookie is set by the server — returning user flow clears onboarding flag.
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("inkbase_show_onboarding");
+      }
       window.location.href = "/dashboard";
     } catch {
       setError("Something went wrong. Please try again.");
