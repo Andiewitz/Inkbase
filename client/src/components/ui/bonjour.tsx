@@ -4,122 +4,97 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface BonjourProps {
-  /** Called once the animation fully completes and the screen has dissolved */
   onFinished: () => void;
 }
 
-const HELLO_TEXT = "Hello.";
+const HELLO = "Hello.";
+
+// Each character fades in individually — staggered, cinematic
+const containerVariants: import("framer-motion").Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.12,
+    },
+  },
+  exit: {
+    transition: {
+      staggerChildren: 0.04,
+      staggerDirection: -1,
+    },
+  },
+};
+
+const charVariants: import("framer-motion").Variants = {
+  hidden: { opacity: 0, y: 10, filter: "blur(8px)" },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+    filter: "blur(6px)",
+    transition: { duration: 0.5, ease: "easeIn" },
+  },
+};
 
 export function Bonjour({ onFinished }: BonjourProps) {
-  const [displayedText, setDisplayedText] = useState("");
-  const [charIndex, setCharIndex] = useState(0);
-  const [phase, setPhase] = useState<"typing" | "hold" | "exit">("typing");
-  const [visible, setVisible] = useState(true);
+  const [phase, setPhase] = useState<"in" | "hold" | "out">("in");
+  const [mounted, setMounted] = useState(true);
 
-  // Phase 1 — type each character at ~90ms
+  // After stagger completes (~0.12 * 6 chars + 0.6 letter duration ≈ 1.4s), hold
   useEffect(() => {
-    if (phase !== "typing") return;
-    if (charIndex < HELLO_TEXT.length) {
-      const t = setTimeout(() => {
-        setDisplayedText((prev) => prev + HELLO_TEXT[charIndex]);
-        setCharIndex((i) => i + 1);
-      }, 90);
-      return () => clearTimeout(t);
-    } else {
-      // All chars typed → hold briefly then exit
-      const t = setTimeout(() => setPhase("hold"), 900);
-      return () => clearTimeout(t);
-    }
-  }, [charIndex, phase]);
+    if (phase !== "in") return;
+    const t = setTimeout(() => setPhase("hold"), 1600);
+    return () => clearTimeout(t);
+  }, [phase]);
 
-  // Phase 2 — hold, then begin exit
+  // Hold for 2.4 seconds, then exit
   useEffect(() => {
     if (phase !== "hold") return;
-    const t = setTimeout(() => setPhase("exit"), 600);
+    const t = setTimeout(() => setPhase("out"), 2400);
     return () => clearTimeout(t);
   }, [phase]);
 
-  // Phase 3 — exit: Framer motion handles the fade/scale, we fire onFinished
+  // Exit animation takes ~1s, then unmount and call onFinished
   useEffect(() => {
-    if (phase !== "exit") return;
-    // Give the exit animation time to complete (800ms) then unmount
+    if (phase !== "out") return;
     const t = setTimeout(() => {
-      setVisible(false);
-    }, 800);
+      setMounted(false);
+    }, 900);
     return () => clearTimeout(t);
   }, [phase]);
 
-  // When visibility flips off, fire the parent callback
   useEffect(() => {
-    if (!visible) onFinished();
-  }, [visible, onFinished]);
+    if (!mounted) onFinished();
+  }, [mounted, onFinished]);
 
   return (
     <AnimatePresence>
-      {visible && (
+      {mounted && (
         <motion.div
-          key="bonjour"
-          // Entry — instant mount, full opacity
+          key="bonjour-screen"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-white"
           initial={{ opacity: 1 }}
-          // Exit — scale up slightly + fade (Apple's characteristic dissolve)
-          animate={phase === "exit" ? { opacity: 0, scale: 1.04 } : { opacity: 1, scale: 1 }}
-          transition={{ duration: 0.75, ease: [0.4, 0, 0.2, 1] }}
-          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black"
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
         >
-          {/* Wordmark */}
-          <motion.p
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 0.25, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="absolute top-10 text-xs font-semibold uppercase tracking-[0.3em] text-white"
-            style={{ fontFamily: "var(--font-lobster), cursive" }}
-          >
-            Inkbase
-          </motion.p>
-
-          {/* The Hello text — fades in word by word via character accumulation */}
           <motion.h1
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.05 }}
-            className="select-none text-center text-[clamp(3.5rem,10vw,7.5rem)] font-bold leading-none tracking-tight text-white"
+            className="flex select-none text-[clamp(4rem,12vw,9rem)] font-bold tracking-tight text-gray-900"
             style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}
+            variants={containerVariants}
+            initial="hidden"
+            animate={phase === "out" ? "exit" : "visible"}
           >
-            {displayedText}
-            {/* Blinking cursor — hides once typing is done */}
-            {phase === "typing" && (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: [0, 1, 0] }}
-                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                className="ml-1 inline-block h-[0.85em] w-[4px] translate-y-[0.05em] rounded-full bg-white align-middle"
-              />
-            )}
+            {HELLO.split("").map((char, i) => (
+              <motion.span key={i} variants={charVariants}>
+                {char}
+              </motion.span>
+            ))}
           </motion.h1>
-
-          {/* Subtitle — fades in once typing is complete */}
-          <AnimatePresence>
-            {(phase === "hold" || phase === "exit") && (
-              <motion.p
-                key="subtitle"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 0.45, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5 }}
-                className="mt-5 text-sm font-medium tracking-wide text-white"
-              >
-                Welcome to your workspace
-              </motion.p>
-            )}
-          </AnimatePresence>
-
-          {/* Bottom progress line (Apple-style thin bar) */}
-          <motion.div
-            className="absolute bottom-0 left-0 h-[2px] bg-white/20"
-            initial={{ width: "0%" }}
-            animate={{ width: "100%" }}
-            transition={{ duration: 2.2, ease: "easeInOut" }}
-          />
         </motion.div>
       )}
     </AnimatePresence>
