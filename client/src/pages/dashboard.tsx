@@ -1,14 +1,17 @@
 "use client";
 
-import { useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowsRightLeftIcon,
+  ChevronDoubleLeftIcon,
+  ChevronDoubleRightIcon,
   DocumentIcon,
   DocumentTextIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
+import { GitBranchIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   DOCUMENTS,
   FREE_TIER_MAX,
@@ -38,65 +41,96 @@ function Sidebar({
   activeId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("inkbase_sidebar_collapsed") === "true";
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("inkbase_sidebar_collapsed", String(collapsed));
+  }, [collapsed]);
+
   return (
-    <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-gray-200 bg-white px-3 py-4 select-none">
+    <aside
+      className={cn(
+        "flex h-screen shrink-0 flex-col border-r border-gray-200 bg-white py-4 select-none transition-[width] duration-300 ease-in-out overflow-hidden",
+        collapsed ? "w-16 px-2" : "w-60 px-3",
+      )}
+    >
       {/* Workspace Branding */}
-      <div className="flex items-center gap-2.5 px-2 pb-4 border-b border-gray-100">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-900 text-white font-bold text-sm shrink-0">
+      <div
+        className={cn(
+          "flex items-center pb-4 border-b border-gray-100",
+          collapsed ? "justify-center" : "gap-2.5 px-2",
+        )}
+      >
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-900 text-sm font-bold text-white">
           I
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="truncate text-sm font-bold text-gray-900">Inkbase</p>
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-            {workspace.name}
-          </p>
-        </div>
+        {!collapsed && (
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-gray-900">Inkbase</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+              {workspace.name}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Navigation */}
       <nav className="mt-4 space-y-1">
         {[
           { label: "Recent Documents", icon: DocumentTextIcon, active: true },
-          { label: "Branch Reviews", icon: ArrowsRightLeftIcon, active: false },
+          { label: "Branch Reviews", icon: GitBranchIcon, active: false },
           { label: "Trash", icon: TrashIcon, active: false },
         ].map((item) => (
           <button
             key={item.label}
-            className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+            title={collapsed ? item.label : undefined}
+            className={cn(
+              "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold transition",
+              collapsed && "justify-center px-2",
               item.active
                 ? "bg-blue-50 text-blue-700"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            }`}
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+            )}
           >
             <item.icon className="h-4 w-4 shrink-0" />
-            <span>{item.label}</span>
+            {!collapsed && <span>{item.label}</span>}
           </button>
         ))}
       </nav>
 
       {/* Document List in Sidebar */}
       <div className="mt-6">
-        <div className="flex items-center justify-between px-3 mb-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-            Manuscripts
-          </span>
-          <span className="text-[10px] font-medium text-gray-400">
-            {documents.length}/{FREE_TIER_MAX}
-          </span>
-        </div>
+        {!collapsed && (
+          <div className="mb-2 flex items-center justify-between px-3">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              Manuscripts
+            </span>
+            <span className="text-[10px] font-medium text-gray-400">
+              {documents.length}/{FREE_TIER_MAX}
+            </span>
+          </div>
+        )}
         <div className="space-y-0.5">
           {documents.map((doc) => (
             <button
               key={doc.id}
               onClick={() => onSelect(doc.id)}
-              className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition ${
+              title={collapsed ? doc.title : undefined}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition",
+                collapsed && "justify-center px-2",
                 activeId === doc.id
                   ? "bg-gray-100 font-semibold text-gray-900"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
+                  : "text-gray-600 hover:bg-gray-50",
+              )}
             >
               <DocumentIcon className="h-4 w-4 shrink-0 text-blue-500" />
-              <span className="truncate text-left">{doc.title}</span>
+              {!collapsed && <span className="truncate text-left">{doc.title}</span>}
             </button>
           ))}
         </div>
@@ -104,31 +138,55 @@ function Sidebar({
 
       {/* Free Tier Storage Limit Indicator */}
       <div className="mt-auto border-t border-gray-100 pt-4 px-2">
-        <div className="rounded-xl bg-gray-50 p-3">
-          <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="font-semibold text-gray-700">Free Tier</span>
-            <span className="text-[10px] text-gray-500">
-              {documents.length}/{FREE_TIER_MAX} Docs
-            </span>
+        {!collapsed && (
+          <div className="rounded-xl bg-gray-50 p-3">
+            <div className="mb-1.5 flex items-center justify-between text-xs">
+              <span className="font-semibold text-gray-700">Free Tier</span>
+              <span className="text-[10px] text-gray-500">
+                {documents.length}/{FREE_TIER_MAX} Docs
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+              <div
+                className="h-full bg-blue-600 transition-all duration-300"
+                style={{ width: `${(documents.length / FREE_TIER_MAX) * 100}%` }}
+              />
+            </div>
           </div>
-          <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
-            <div
-              className="h-full bg-blue-600 transition-all duration-300"
-              style={{ width: `${(documents.length / FREE_TIER_MAX) * 100}%` }}
-            />
-          </div>
-        </div>
+        )}
 
-        <div className="mt-4 flex items-center gap-2.5 pt-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
+        <div
+          className={cn(
+            "mt-4 flex items-center gap-2.5 pt-2",
+            collapsed && "justify-center",
+          )}
+        >
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
             D
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="truncate text-xs font-semibold text-gray-800">
-              devwork@mesh.com
-            </p>
-          </div>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold text-gray-800">
+                devwork@mesh.com
+              </p>
+            </div>
+          )}
         </div>
+
+        {/* Collapse Toggle */}
+        <button
+          type="button"
+          onClick={() => setCollapsed((c) => !c)}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="mt-2 flex w-full items-center justify-center rounded-lg py-2 text-gray-400 transition hover:bg-gray-50 hover:text-gray-600"
+        >
+          {collapsed ? (
+            <ChevronDoubleRightIcon className="h-4 w-4" />
+          ) : (
+            <ChevronDoubleLeftIcon className="h-4 w-4" />
+          )}
+        </button>
       </div>
     </aside>
   );
@@ -186,31 +244,31 @@ function DashboardMain({ documents }: { documents: DocumentItem[] }) {
 
             <div className="grid grid-cols-5 gap-4">
               <NewDocumentCard
-                title="Blank document"
+                title="Blank Document"
                 onClick={() => {}}
                 disabled={atLimit}
               />
               <NewDocumentCard
-                title="Fiction Chapter"
-                subtitle="Novel Draft"
+                title="Standard Manuscript"
+                subtitle="Book / Long-form"
                 onClick={() => {}}
                 disabled={atLimit}
               />
               <NewDocumentCard
-                title="Essay Proposal"
-                subtitle="Academic / Non-Fiction"
+                title="Screenplay"
+                subtitle="Script Format"
                 onClick={() => {}}
                 disabled={atLimit}
               />
               <NewDocumentCard
-                title="Prose Review"
-                subtitle="Branch Review Template"
+                title="Stage Play"
+                subtitle="Theatre Format"
                 onClick={() => {}}
                 disabled={atLimit}
               />
               <NewDocumentCard
-                title="Short Story"
-                subtitle="Creative Writing"
+                title="Academic Paper"
+                subtitle="APA / MLA"
                 onClick={() => {}}
                 disabled={atLimit}
               />
