@@ -10,425 +10,421 @@ import { OnboardingOverlay } from "../components/ui/onboarding";
 
 type Screen = "bonjour" | "onboarding" | "dashboard";
 
-interface Branch {
+interface BranchInfo {
   name: string;
   isEdit: boolean;
   pendingChanges: number;
-  lastEdit: string;
 }
 
-interface Project {
+interface DocumentItem {
   id: string;
   title: string;
-  description: string;
-  wordCount: number;
-  mainBranch: Branch;
-  editBranch: Branch | null;
+  excerpt: string;
   lastEdited: string;
-  collaborators: number;
-  status: "active" | "review" | "merged";
+  wordCount: number;
+  branch: BranchInfo;
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── Document Data ─────────────────────────────────────────────────────────────
 
-const MOCK_WORKSPACE = { name: "My Workspace", plan: "free" };
+const MOCK_WORKSPACE = { name: "My Workspace", plan: "Free Tier" };
 
-const MOCK_PROJECTS: Project[] = [
+const DOCUMENTS: DocumentItem[] = [
   {
     id: "1",
-    title: "The Architecture of Solitude",
-    description: "A long-form essay exploring how remote work changed the texture of modern loneliness.",
+    title: "The Cassidy Chronicles: Part 1",
+    excerpt:
+      "The rain had not stopped since Tuesday. Below the elevated tracks of the 4th Avenue line, the streetlights reflected in long, shimmering ribbons across the wet asphalt. Mark pulled his collar up against the damp chill, watching the neon sign of the diner flicker and hum in the fog...",
+    lastEdited: "Opened Aug 2, 2026",
     wordCount: 4820,
-    mainBranch: { name: "main", isEdit: false, pendingChanges: 0, lastEdit: "2 days ago" },
-    editBranch: { name: "edit", isEdit: true, pendingChanges: 14, lastEdit: "3 hours ago" },
-    lastEdited: "3 hours ago",
-    collaborators: 1,
-    status: "review",
+    branch: { name: "edit", isEdit: true, pendingChanges: 14 },
   },
   {
     id: "2",
-    title: "On Calibrated Uncertainty",
-    description: "A short piece on epistemic humility and why smart people hold their beliefs loosely.",
+    title: "The Bronze and the Silver",
+    excerpt:
+      "CHAPTER 1 — THE MERCANTILE CODE\n\nIn the grand halls of the guild masters, gold was considered crude—a metal for soldiers and tax collectors. Silver was for scholars, and polished bronze was reserved for those who recorded the true history of the river kingdoms...",
+    lastEdited: "Opened Jul 23, 2026",
+    wordCount: 2340,
+    branch: { name: "main", isEdit: false, pendingChanges: 0 },
+  },
+  {
+    id: "3",
+    title: "Essay: Architecture of Solitude",
+    excerpt:
+      "When we look at the evolution of modern workspaces, we notice a subtle shift. The open office promised collaboration but delivered noise; the home office promised freedom but introduced isolation...",
+    lastEdited: "Opened Jul 8, 2026",
     wordCount: 1940,
-    mainBranch: { name: "main", isEdit: false, pendingChanges: 0, lastEdit: "1 week ago" },
-    editBranch: null,
-    lastEdited: "1 week ago",
-    collaborators: 1,
-    status: "active",
+    branch: { name: "edit", isEdit: true, pendingChanges: 3 },
   },
 ];
 
 const FREE_TIER_MAX = 3;
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Google Docs Style Document Preview Card ──────────────────────────────────
 
-function StatusBadge({ status }: { status: Project["status"] }) {
-  const map = {
-    active: { label: "Active", cls: "bg-gray-100 text-gray-600" },
-    review: { label: "In Review", cls: "bg-amber-50 text-amber-700 ring-1 ring-amber-200" },
-    merged: { label: "Merged", cls: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" },
-  };
-  const { label, cls } = map[status];
+function DocumentCard({
+  doc,
+  onClick,
+}: {
+  doc: DocumentItem;
+  onClick: () => void;
+}) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${cls}`}>
-      {label}
-    </span>
+    <motion.div
+      whileHover={{ y: -3 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.15 }}
+      onClick={onClick}
+      className="group cursor-pointer flex flex-col rounded-xl border border-gray-200 bg-white overflow-hidden shadow-xs hover:shadow-md hover:border-gray-300 transition-all"
+    >
+      {/* Paper Sheet Preview Area */}
+      <div className="relative aspect-[3/4] w-full bg-gray-50 border-b border-gray-100 p-4 overflow-hidden flex flex-col justify-start">
+        {/* Paper Document Representation */}
+        <div className="w-full h-full bg-white rounded-md border border-gray-200/80 shadow-xs p-3 flex flex-col space-y-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
+          <div className="h-2 w-3/4 bg-gray-800/80 rounded-xs mb-1" />
+          <div className="h-1.5 w-full bg-gray-300/70 rounded-xs" />
+          <div className="h-1.5 w-full bg-gray-300/70 rounded-xs" />
+          <div className="h-1.5 w-5/6 bg-gray-300/70 rounded-xs" />
+          <div className="h-1.5 w-full bg-gray-300/70 rounded-xs" />
+          <div className="h-1.5 w-4/5 bg-gray-300/70 rounded-xs" />
+
+          {/* Actual Micro Snippet Text Preview */}
+          <div className="pt-2 text-[9px] leading-[1.3] text-gray-500 line-clamp-6 select-none font-serif">
+            {doc.excerpt}
+          </div>
+
+          <div className="mt-auto pt-2 flex items-center justify-between border-t border-gray-100 text-[8px] text-gray-400 font-sans">
+            <span>{doc.wordCount} words</span>
+            <span
+              className={`font-semibold px-1 rounded ${
+                doc.branch.isEdit
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              {doc.branch.name}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Card Bottom Meta (Google Docs Style) */}
+      <div className="p-3 bg-white flex items-start justify-between gap-2">
+        <div className="flex items-start gap-2.5 min-w-0">
+          {/* Docs Blue Page Icon */}
+          <div className="mt-0.5 shrink-0 text-blue-600">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+            </svg>
+          </div>
+
+          <div className="min-w-0">
+            <h4 className="text-xs font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+              {doc.title}
+            </h4>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[11px] text-gray-400">{doc.lastEdited}</span>
+              {doc.branch.isEdit && (
+                <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700">
+                  {doc.branch.pendingChanges} edits
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 3-dots Menu Button */}
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition"
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM8 4.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM8 14.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+          </svg>
+        </button>
+      </div>
+    </motion.div>
   );
 }
 
-function BranchPill({ branch, dimmed = false }: { branch: Branch; dimmed?: boolean }) {
+// ─── Start New Document Template Card ─────────────────────────────────────────
+
+function NewDocumentCard({
+  title,
+  subtitle,
+  icon,
+  onClick,
+  disabled,
+}: {
+  title: string;
+  subtitle?: string;
+  icon?: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
   return (
-    <div className={`flex items-center gap-1.5 ${dimmed ? "opacity-40" : ""}`}>
-      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="text-gray-400">
-        <circle cx="4" cy="4" r="2" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx="4" cy="12" r="2" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx="12" cy="8" r="2" stroke={branch.isEdit ? "#f59e0b" : "currentColor"} strokeWidth="1.5" fill={branch.isEdit ? "#fef3c7" : "none"} />
-        <path d="M4 6v4M4 6c0-1 1-2 2-2h2c1 0 2 1 2 2v1M10 7v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-      <span className={`text-xs font-mono font-medium ${branch.isEdit ? "text-amber-600" : "text-gray-500"}`}>
-        {branch.name}
+    <div className="flex flex-col items-center">
+      <motion.button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        whileHover={disabled ? {} : { y: -2 }}
+        whileTap={disabled ? {} : { scale: 0.98 }}
+        className={`aspect-[3/4] w-full rounded-xl border flex items-center justify-center bg-white shadow-xs transition-all ${
+          disabled
+            ? "border-gray-200 opacity-50 cursor-not-allowed bg-gray-50"
+            : "border-gray-200 hover:border-blue-500 hover:shadow-md cursor-pointer"
+        }`}
+      >
+        {icon ? (
+          icon
+        ) : (
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+            </svg>
+          </div>
+        )}
+      </motion.button>
+      <span className="mt-2 text-xs font-medium text-gray-900 text-center truncate max-w-full">
+        {title}
       </span>
-      {branch.pendingChanges > 0 && (
-        <span className="rounded-full bg-amber-100 px-1.5 py-px text-[10px] font-bold text-amber-700">
-          {branch.pendingChanges}
+      {subtitle && (
+        <span className="text-[10px] text-gray-400 text-center truncate max-w-full">
+          {subtitle}
         </span>
       )}
     </div>
   );
 }
 
-function ProjectCard({ project, onClick }: { project: Project; onClick: () => void }) {
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.99 }}
-      transition={{ duration: 0.15 }}
-      className="group w-full rounded-2xl border border-gray-200 bg-white p-6 text-left shadow-sm transition hover:border-gray-300 hover:shadow-md"
-    >
-      {/* Top row */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="truncate text-base font-semibold text-gray-900 group-hover:text-black">
-            {project.title}
-          </h3>
-          <p className="mt-1 line-clamp-2 text-sm text-gray-500 leading-relaxed">
-            {project.description}
-          </p>
-        </div>
-        <StatusBadge status={project.status} />
-      </div>
+// ─── Sidebar Component ────────────────────────────────────────────────────────
 
-      {/* Branch indicators */}
-      <div className="mt-5 flex items-center gap-4 border-t border-gray-100 pt-4">
-        <BranchPill branch={project.mainBranch} />
-        {project.editBranch ? (
-          <>
-            <svg width="14" height="14" viewBox="0 0 16 16" className="text-gray-300 shrink-0">
-              <path d="M4 8h8M9 5l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <BranchPill branch={project.editBranch} />
-          </>
-        ) : (
-          <span className="text-xs text-gray-400">No active edits</span>
-        )}
-      </div>
-
-      {/* Footer meta */}
-      <div className="mt-4 flex items-center justify-between text-[11px] text-gray-400">
-        <span>{project.wordCount.toLocaleString()} words</span>
-        <span>Edited {project.lastEdited}</span>
-      </div>
-    </motion.button>
-  );
-}
-
-function NewProjectCard({ onClick, disabled }: { onClick: () => void; disabled: boolean }) {
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      whileHover={disabled ? {} : { y: -2 }}
-      whileTap={disabled ? {} : { scale: 0.99 }}
-      transition={{ duration: 0.15 }}
-      className={`flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-8 text-center transition ${
-        disabled
-          ? "cursor-not-allowed border-gray-150 opacity-50"
-          : "border-gray-200 hover:border-gray-400 hover:bg-gray-50/60"
-      }`}
-    >
-      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${disabled ? "bg-gray-100" : "bg-gray-900"}`}>
-        <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-          <path d="M8 3v10M3 8h10" stroke={disabled ? "#9ca3af" : "white"} strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-      </div>
-      <div>
-        <p className={`text-sm font-semibold ${disabled ? "text-gray-400" : "text-gray-700"}`}>
-          {disabled ? "Project limit reached" : "New project"}
-        </p>
-        <p className="mt-0.5 text-xs text-gray-400">
-          {disabled ? "Upgrade to add more projects" : "Start a new manuscript"}
-        </p>
-      </div>
-    </motion.button>
-  );
-}
-
-function Sidebar({ workspace, projects, activeId, onSelect, onNewProject }: {
+function Sidebar({
+  workspace,
+  documents,
+  activeId,
+  onSelect,
+}: {
   workspace: typeof MOCK_WORKSPACE;
-  projects: Project[];
+  documents: DocumentItem[];
   activeId: string | null;
   onSelect: (id: string) => void;
-  onNewProject: () => void;
 }) {
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-gray-200 bg-white px-4 py-5">
-      {/* Workspace header */}
-      <div className="flex items-center gap-2.5 px-2 pb-5 border-b border-gray-100">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-900 text-white text-xs font-bold shrink-0">
-          {workspace.name[0]}
+    <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-gray-200 bg-white px-3 py-4 select-none">
+      {/* Workspace Branding */}
+      <div className="flex items-center gap-2.5 px-2 pb-4 border-b border-gray-100">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-900 text-white font-bold text-sm shrink-0">
+          I
         </div>
         <div className="flex-1 min-w-0">
-          <p className="truncate text-sm font-semibold text-gray-900">{workspace.name}</p>
-          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Free</p>
+          <p className="truncate text-sm font-bold text-gray-900">Inkbase</p>
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+            {workspace.name}
+          </p>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="mt-4 space-y-0.5">
+      {/* Navigation */}
+      <nav className="mt-4 space-y-1">
         {[
-          { label: "Home", icon: "M2 6l6-4 6 4v8a1 1 0 01-1 1H3a1 1 0 01-1-1V6z" },
-          { label: "All Projects", icon: "M4 4h3v3H4V4zm5 0h3v3H9V4zM4 9h3v3H4V9zm5 0h3v3H9V9z" },
-          { label: "Activity", icon: "M2 8h2l2 4 4-8 2 4h2" },
+          { label: "Recent Documents", icon: "📄", active: true },
+          { label: "Branch Reviews", icon: "🔀", active: false },
+          { label: "Trash", icon: "🗑️", active: false },
         ].map((item) => (
           <button
             key={item.label}
-            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition"
+            className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+              item.active
+                ? "bg-blue-50 text-blue-700"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            }`}
           >
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="shrink-0 text-gray-400">
-              <path d={item.icon} stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            {item.label}
+            <span>{item.icon}</span>
+            <span>{item.label}</span>
           </button>
         ))}
       </nav>
 
-      {/* Projects list */}
-      <div className="mt-5">
-        <div className="flex items-center justify-between px-3 mb-1">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Projects</span>
-          <span className="text-[10px] font-semibold text-gray-400">{projects.length}/{FREE_TIER_MAX}</span>
+      {/* Document List in Sidebar */}
+      <div className="mt-6">
+        <div className="flex items-center justify-between px-3 mb-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+            Manuscripts
+          </span>
+          <span className="text-[10px] font-medium text-gray-400">
+            {documents.length}/{FREE_TIER_MAX}
+          </span>
         </div>
         <div className="space-y-0.5">
-          {projects.map((p) => (
+          {documents.map((doc) => (
             <button
-              key={p.id}
-              onClick={() => onSelect(p.id)}
-              className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
-                activeId === p.id
-                  ? "bg-gray-100 text-gray-900 font-semibold"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              key={doc.id}
+              onClick={() => onSelect(doc.id)}
+              className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition ${
+                activeId === doc.id
+                  ? "bg-gray-100 font-semibold text-gray-900"
+                  : "text-gray-600 hover:bg-gray-50"
               }`}
             >
-              <span className="shrink-0 text-base">📄</span>
-              <span className="truncate">{p.title}</span>
-              {p.editBranch && p.editBranch.pendingChanges > 0 && (
-                <span className="ml-auto shrink-0 h-1.5 w-1.5 rounded-full bg-amber-400" />
-              )}
+              <span className="text-blue-500 shrink-0">📄</span>
+              <span className="truncate text-left">{doc.title}</span>
             </button>
           ))}
-          {projects.length < FREE_TIER_MAX && (
-            <button
-              onClick={onNewProject}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition"
-            >
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              New project
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Spacer + User */}
-      <div className="mt-auto border-t border-gray-100 pt-4">
-        {/* Free tier usage */}
-        <div className="mb-4 rounded-xl bg-gray-50 px-3 py-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-gray-700">Free plan</span>
-            <span className="text-xs text-gray-500">{projects.length}/{FREE_TIER_MAX} projects</span>
+      {/* Free Tier Storage Limit Indicator */}
+      <div className="mt-auto border-t border-gray-100 pt-4 px-2">
+        <div className="rounded-xl bg-gray-50 p-3">
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="font-semibold text-gray-700">Free Tier</span>
+            <span className="text-[10px] text-gray-500">
+              {documents.length}/{FREE_TIER_MAX} Docs
+            </span>
           </div>
-          <div className="h-1.5 w-full rounded-full bg-gray-200">
+          <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
             <div
-              className="h-1.5 rounded-full bg-gray-900 transition-all"
-              style={{ width: `${(projects.length / FREE_TIER_MAX) * 100}%` }}
+              className="h-full bg-blue-600 transition-all duration-300"
+              style={{ width: `${(documents.length / FREE_TIER_MAX) * 100}%` }}
             />
           </div>
-          <button className="mt-2.5 w-full rounded-lg bg-gray-900 py-1.5 text-xs font-semibold text-white hover:bg-gray-800 transition">
-            Upgrade
-          </button>
         </div>
 
-        <div className="flex items-center gap-2.5 px-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-600">
+        <div className="mt-4 flex items-center gap-2.5 pt-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
             D
           </div>
           <div className="flex-1 min-w-0">
-            <p className="truncate text-xs font-semibold text-gray-700">devwork@mesh.com</p>
+            <p className="truncate text-xs font-semibold text-gray-800">
+              devwork@mesh.com
+            </p>
           </div>
-          <button className="text-gray-400 hover:text-gray-600 transition">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-              <path d="M8 9a1 1 0 100-2 1 1 0 000 2zM3 9a1 1 0 100-2 1 1 0 000 2zM13 9a1 1 0 100-2 1 1 0 000 2z" fill="currentColor" />
-            </svg>
-          </button>
         </div>
       </div>
     </aside>
   );
 }
 
-// ─── Dashboard main view ───────────────────────────────────────────────────────
+// ─── Main Google Docs Style Dashboard View ────────────────────────────────────
 
-function DashboardMain({ projects }: { projects: Project[] }) {
-  const [activeProject, setActiveProject] = useState<string | null>(null);
-  const atLimit = projects.length >= FREE_TIER_MAX;
+function DashboardMain({ documents }: { documents: DocumentItem[] }) {
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const atLimit = documents.length >= FREE_TIER_MAX;
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex flex-1 overflow-hidden bg-gray-100/60">
       <Sidebar
         workspace={MOCK_WORKSPACE}
-        projects={projects}
-        activeId={activeProject}
-        onSelect={setActiveProject}
-        onNewProject={() => {}}
+        documents={documents}
+        activeId={activeId}
+        onSelect={setActiveId}
       />
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto bg-gray-50/50">
-        {/* Topbar */}
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white/80 px-8 py-4 backdrop-blur">
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">Projects</h1>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {MOCK_WORKSPACE.name} · {projects.length} of {FREE_TIER_MAX} projects used
-            </p>
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto">
+        {/* Top Header Bar (Google Docs Style) */}
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-8 py-3">
+          {/* Search Input Bar */}
+          <div className="flex items-center gap-3 w-full max-w-xl rounded-full bg-gray-100 px-4 py-2 text-sm text-gray-700 focus-within:bg-white focus-within:shadow-md focus-within:ring-1 focus-within:ring-gray-300 transition">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-gray-400 shrink-0">
+              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search manuscripts and review branches"
+              className="w-full bg-transparent outline-none placeholder-gray-400 text-sm"
+            />
           </div>
+
           <div className="flex items-center gap-3">
-            <button className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
-              Activity
-            </button>
-            <button
-              disabled={atLimit}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                atLimit
-                  ? "cursor-not-allowed bg-gray-100 text-gray-400"
-                  : "bg-gray-900 text-white hover:bg-gray-800"
-              }`}
-            >
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-              New project
+            <button className="rounded-full bg-blue-50 px-4 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition">
+              Upgrade Plan
             </button>
           </div>
         </header>
 
-        <div className="px-8 py-8">
-          {/* Summary row */}
-          <div className="mb-8 grid grid-cols-3 gap-4">
-            {[
-              {
-                label: "Total words",
-                value: projects.reduce((s, p) => s + p.wordCount, 0).toLocaleString(),
-                sub: "across all manuscripts",
-                icon: "M3 4h10M3 8h7M3 12h4",
-              },
-              {
-                label: "In review",
-                value: projects.filter((p) => p.status === "review").length,
-                sub: "projects with pending edits",
-                icon: "M2 8h2l2 4 4-8 2 4h2",
-              },
-              {
-                label: "Open edits",
-                value: projects.reduce((s, p) => s + (p.editBranch?.pendingChanges ?? 0), 0),
-                sub: "changes awaiting approval",
-                icon: "M4 4h3v3H4V4zm5 0h3v3H9V4zM4 9h3v3H4V9zm5 0h3v3H9V9z",
-              },
-            ].map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-3">
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="text-gray-400">
-                    <path d={stat.icon} stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">{stat.label}</span>
-                </div>
-                <p className="text-3xl font-bold tracking-tight text-gray-900">{stat.value}</p>
-                <p className="mt-1 text-xs text-gray-500">{stat.sub}</p>
-              </div>
-            ))}
-          </div>
+        <div className="max-w-6xl mx-auto py-6 px-8 space-y-8">
+          {/* Section 1: Start a new document (Google Docs Style Template Row) */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-800">
+                Start a new document
+              </h3>
+              <span className="text-xs font-medium text-gray-500 hover:text-gray-700 cursor-pointer">
+                Template gallery ↕
+              </span>
+            </div>
 
-          {/* Projects grid */}
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-gray-900">Your manuscripts</h2>
-            <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1">
-              {["grid", "list"].map((v) => (
-                <button
-                  key={v}
-                  className="rounded-md px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-100 transition"
-                >
-                  {v === "grid" ? (
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 2h5v5H2V2zm7 0h5v5H9V2zM2 9h5v5H2V9zm7 0h5v5H9V9z" stroke="currentColor" strokeWidth="1.2" /></svg>
-                  ) : (
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
-                  )}
-                </button>
-              ))}
+            <div className="grid grid-cols-5 gap-4">
+              <NewDocumentCard
+                title="Blank document"
+                onClick={() => {}}
+                disabled={atLimit}
+              />
+              <NewDocumentCard
+                title="Fiction Chapter"
+                subtitle="Novel Draft"
+                onClick={() => {}}
+                disabled={atLimit}
+              />
+              <NewDocumentCard
+                title="Essay Proposal"
+                subtitle="Academic / Non-Fiction"
+                onClick={() => {}}
+                disabled={atLimit}
+              />
+              <NewDocumentCard
+                title="Prose Review"
+                subtitle="Branch Review Template"
+                onClick={() => {}}
+                disabled={atLimit}
+              />
+              <NewDocumentCard
+                title="Short Story"
+                subtitle="Creative Writing"
+                onClick={() => {}}
+                disabled={atLimit}
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
-            {projects.map((p, i) => (
-              <motion.div
-                key={p.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.07, duration: 0.35, ease: "easeOut" }}
-              >
-                <ProjectCard project={p} onClick={() => setActiveProject(p.id)} />
-              </motion.div>
-            ))}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: projects.length * 0.07, duration: 0.35, ease: "easeOut" }}
-            >
-              <NewProjectCard onClick={() => {}} disabled={atLimit} />
-            </motion.div>
-          </div>
+          {/* Section 2: Recent documents (Cards ONLY with Text Preview) */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-800">
+                Recent documents
+              </h3>
 
-          {/* How it works callout */}
-          <div className="mt-10 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-start gap-4">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-900 text-white">
-                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                  <circle cx="4" cy="4" r="2" stroke="white" strokeWidth="1.4" />
-                  <circle cx="4" cy="12" r="2" stroke="white" strokeWidth="1.4" />
-                  <circle cx="12" cy="8" r="2" stroke="#fbbf24" strokeWidth="1.4" fill="#fef3c7" />
-                  <path d="M4 6v4M4 6c0-1 1-2 2-2h2c1 0 2 1 2 2v1M10 7v1" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
-                </svg>
+              <div className="flex items-center gap-3 text-xs text-gray-500">
+                <span>Owned by anyone ▾</span>
+                <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1">
+                  <button className="p-1 rounded bg-gray-100 text-gray-800">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M2 2h5v5H2V2zm7 0h5v5H9V2zM2 9h5v5H2V9zm7 0h5v5H9V9z" />
+                    </svg>
+                  </button>
+                  <button className="p-1 rounded hover:bg-gray-100 text-gray-500">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M2 4h12M2 8h12M2 12h12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-gray-900">How branching works</h3>
-                <p className="mt-1 text-sm text-gray-500 leading-relaxed max-w-xl">
-                  Every project has a <code className="rounded bg-gray-100 px-1 py-0.5 text-xs font-mono">main</code> branch — your approved manuscript. When you edit, changes go to your{" "}
-                  <code className="rounded bg-amber-50 px-1 py-0.5 text-xs font-mono text-amber-700">edit</code> branch. Review AI suggestions like GitHub PRs, then merge approved edits into main.
-                </p>
-              </div>
+            </div>
+
+            {/* Document Cards Grid ONLY */}
+            <div className="grid grid-cols-4 gap-5">
+              {documents.map((doc) => (
+                <DocumentCard
+                  key={doc.id}
+                  doc={doc}
+                  onClick={() => setActiveId(doc.id)}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -437,19 +433,14 @@ function DashboardMain({ projects }: { projects: Project[] }) {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Dashboard Page Wrapper ───────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const router = useRouter();
 
-  // isMounted prevents SSR/client hydration mismatch.
-  // Server always renders a white placeholder; useLayoutEffect fires
-  // synchronously on the client before the first browser paint and sets
-  // the correct screen without a visible flash.
   const [isMounted, setIsMounted] = useState(false);
   const [screen, setScreen] = useState<Screen>("dashboard");
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const hasOnboarding =
       window.location.search.includes("onboarding=true") ||
@@ -470,8 +461,6 @@ export default function DashboardPage() {
 
   const isOverlayActive = screen === "bonjour" || screen === "onboarding";
 
-  // Don't render the real page until after client mount — keeps SSR HTML
-  // identical to the initial client render and avoids hydration errors.
   if (!isMounted) {
     return <div className="fixed inset-0 bg-white" />;
   }
@@ -487,7 +476,7 @@ export default function DashboardPage() {
         }}
         transition={{ duration: 0.5, ease: "easeInOut" }}
       >
-        <DashboardMain projects={MOCK_PROJECTS} />
+        <DashboardMain documents={DOCUMENTS} />
       </motion.div>
 
       {/* Bonjour splash */}
@@ -497,7 +486,9 @@ export default function DashboardPage() {
 
       {/* Onboarding overlay */}
       <AnimatePresence>
-        {screen === "onboarding" && <OnboardingOverlay onClose={handleOnboardingClose} />}
+        {screen === "onboarding" && (
+          <OnboardingOverlay onClose={handleOnboardingClose} />
+        )}
       </AnimatePresence>
     </div>
   );
