@@ -16,3 +16,5 @@ server/bin/
 *.log
 coverage/
 .vercel/
+*.db
+*.db-journal
