@@ -58,8 +58,12 @@ export default function SignupForm() {
         setLoading(false);
         return;
       }
-      // Session cookie is set by the server — no token handling needed here.
-      window.location.href = "/dashboard";
+      // Session cookie is set by the server — check if account setup requires onboarding.
+      if (data.show_onboarding) {
+        window.location.href = "/dashboard?onboarding=true";
+      } else {
+        window.location.href = "/dashboard";
+      }
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

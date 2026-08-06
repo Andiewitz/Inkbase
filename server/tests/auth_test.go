@@ -229,6 +229,46 @@ func TestTokenNotInResponseBody(t *testing.T) {
 	}
 }
 
+// TestOnboardingFlagInRegisterNotLogin verifies that account setup (register)
+// sends show_onboarding=true to trigger the onboarding component overlay, whereas
+// returning user auth (login) sends show_onboarding=false to bypass onboarding.
+func TestOnboardingFlagInRegisterNotLogin(t *testing.T) {
+	handler := api.New()
+	email := uniqueEmail(t)
+
+	// 1. Register must return show_onboarding: true
+	regRec := register(t, handler, email, "securepass123", "10.2.0.1:1")
+	if regRec.Code != http.StatusCreated {
+		t.Fatalf("register failed: %d %s", regRec.Code, regRec.Body.String())
+	}
+	var regBody struct {
+		OK             bool `json:"ok"`
+		ShowOnboarding bool `json:"show_onboarding"`
+	}
+	if err := json.NewDecoder(regRec.Body).Decode(&regBody); err != nil {
+		t.Fatalf("decode register body: %v", err)
+	}
+	if !regBody.ShowOnboarding {
+		t.Errorf("FAIL: register response must send show_onboarding: true (account-setup flow)")
+	}
+
+	// 2. Login must return show_onboarding: false
+	loginRec := login(t, handler, email, "securepass123", "10.2.0.2:1")
+	if loginRec.Code != http.StatusOK {
+		t.Fatalf("login failed: %d %s", loginRec.Code, loginRec.Body.String())
+	}
+	var loginBody struct {
+		OK             bool `json:"ok"`
+		ShowOnboarding bool `json:"show_onboarding"`
+	}
+	if err := json.NewDecoder(loginRec.Body).Decode(&loginBody); err != nil {
+		t.Fatalf("decode login body: %v", err)
+	}
+	if loginBody.ShowOnboarding {
+		t.Errorf("FAIL: login response must NOT send show_onboarding: true (returning user flow)")
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Protected route enforcement
 // ---------------------------------------------------------------------------

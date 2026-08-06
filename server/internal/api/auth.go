@@ -54,7 +54,7 @@ func handleRegister(svc *auth.Service) http.HandlerFunc {
 			return
 		}
 
-		token, err := svc.Register(req.Email, req.Password)
+		res, err := svc.Register(req.Email, req.Password)
 		if errors.Is(err, auth.ErrEmailTaken) {
 			shared.WriteJSON(w, http.StatusConflict, map[string]string{"error": "email already registered"})
 			return
@@ -64,8 +64,11 @@ func handleRegister(svc *auth.Service) http.HandlerFunc {
 			return
 		}
 
-		setSessionCookie(w, token)
-		shared.WriteJSON(w, http.StatusCreated, map[string]bool{"ok": true})
+		setSessionCookie(w, res.Token)
+		shared.WriteJSON(w, http.StatusCreated, map[string]any{
+			"ok":              true,
+			"show_onboarding": res.ShowOnboarding,
+		})
 	}
 }
 
@@ -98,7 +101,10 @@ func handleLogin(svc *auth.Service) http.HandlerFunc {
 		}
 
 		setSessionCookie(w, token)
-		shared.WriteJSON(w, http.StatusOK, map[string]bool{"ok": true})
+		shared.WriteJSON(w, http.StatusOK, map[string]any{
+			"ok":              true,
+			"show_onboarding": false,
+		})
 	}
 }
 

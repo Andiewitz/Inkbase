@@ -13,12 +13,18 @@ var ErrEmailTaken = errors.New("email already registered")
 // ErrInvalidCredentials is returned when login email/password don't match.
 var ErrInvalidCredentials = errors.New("invalid email or password")
 
+// SetupResult contains the JWT token and onboarding flags for newly created accounts.
+type SetupResult struct {
+	Token          string
+	ShowOnboarding bool
+}
+
 // Register creates a new user, hashes their password, and immediately returns
-// a signed JWT so the client is logged in without a second round-trip.
-func (s *Service) Register(email, password string) (token string, err error) {
+// a signed JWT and onboarding signal so the client triggers account setup.
+func (s *Service) Register(email, password string) (*SetupResult, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", fmt.Errorf("hash password: %w", err)
+		return nil, fmt.Errorf("hash password: %w", err)
 	}
 
 	var userID int64
@@ -29,16 +35,19 @@ func (s *Service) Register(email, password string) (token string, err error) {
 	if err != nil {
 		// Unique constraint violation → email taken.
 		if isUniqueViolation(err) {
-			return "", ErrEmailTaken
+			return nil, ErrEmailTaken
 		}
-		return "", fmt.Errorf("insert user: %w", err)
+		return nil, fmt.Errorf("insert user: %w", err)
 	}
 
-	token, err = SignToken(userID)
+	token, err := SignToken(userID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return token, nil
+	return &SetupResult{
+		Token:          token,
+		ShowOnboarding: true,
+	}, nil
 }
 
 
