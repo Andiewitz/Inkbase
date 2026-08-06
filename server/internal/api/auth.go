@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 
 	"inkbase/server/services/auth"
 	"inkbase/server/shared"
 )
+
+// sessionMaxAge matches the JWT TTL defined in services/auth/jwt.go (24 h).
+const sessionMaxAge = 24 * 60 * 60
 
 type registerRequest struct {
 	Email    string `json:"email"`
@@ -19,8 +23,19 @@ type loginRequest struct {
 	Password string `json:"password"`
 }
 
-type tokenResponse struct {
-	Token string `json:"token"`
+// setSessionCookie writes the JWT as an HttpOnly cookie so the browser carries
+// it on every subsequent request automatically — no localStorage, no manual
+// Authorization header.
+func setSessionCookie(w http.ResponseWriter, token string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   os.Getenv("APP_ENV") == "production",
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   sessionMaxAge,
+	})
 }
 
 func handleRegister(svc *auth.Service) http.HandlerFunc {
@@ -49,7 +64,8 @@ func handleRegister(svc *auth.Service) http.HandlerFunc {
 			return
 		}
 
-		shared.WriteJSON(w, http.StatusCreated, tokenResponse{Token: token})
+		setSessionCookie(w, token)
+		shared.WriteJSON(w, http.StatusCreated, map[string]bool{"ok": true})
 	}
 }
 
@@ -75,6 +91,35 @@ func handleLogin(svc *auth.Service) http.HandlerFunc {
 			return
 		}
 
-		shared.WriteJSON(w, http.StatusOK, tokenResponse{Token: token})
+		setSessionCookie(w, token)
+		shared.WriteJSON(w, http.StatusOK, map[string]bool{"ok": true})
+	}
+}
+
+// handleLogout clears the session cookie by overwriting it with an expired one.
+// The JWT itself does not need to be invalidated — it simply becomes inaccessible
+// from the browser once the cookie is gone.
+func handleLogout() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.SetCookie(w, &http.Cookie{
+			Name:     sessionCookieName,
+			Value:    "",
+			Path:     "/",
+			HttpOnly: true,
+			MaxAge:   -1,
+		})
+		shared.WriteJSON(w, http.StatusOK, map[string]bool{"ok": true})
+	}
+}
+
+// handleMe returns the authenticated user's ID. Protected by RequireAuth.
+func handleMe() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := UserIDFromContext(r.Context())
+		if !ok {
+			shared.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "not authenticated"})
+			return
+		}
+		shared.WriteJSON(w, http.StatusOK, map[string]int64{"user_id": userID})
 	}
 }

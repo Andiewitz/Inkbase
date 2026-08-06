@@ -15,13 +15,17 @@ func New() http.Handler {
 	healthSvc := health.NewService()
 	mux.HandleFunc("GET /api/health", handleHealth(healthSvc))
 
-	// Auth
+	// Auth — public
 	authSvc, err := auth.NewService()
 	if err != nil {
 		log.Fatalf("auth service: %v", err)
 	}
 	mux.HandleFunc("POST /api/auth/register", handleRegister(authSvc))
 	mux.HandleFunc("POST /api/auth/login", handleLogin(authSvc))
+	mux.HandleFunc("POST /api/auth/logout", handleLogout())
+
+	// Auth — protected (RequireAuth reads the session cookie)
+	mux.Handle("GET /api/auth/me", RequireAuth(handleMe()))
 
 	return mux
 }

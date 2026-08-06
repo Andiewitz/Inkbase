@@ -58,10 +58,8 @@ export default function SignupForm() {
         setLoading(false);
         return;
       }
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        window.location.href = "/";
-      }
+      // Session cookie is set by the server — no token handling needed here.
+      window.location.href = "/";
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
