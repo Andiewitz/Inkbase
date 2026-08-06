@@ -101,9 +101,17 @@ func handleLogin(svc *auth.Service) http.HandlerFunc {
 		}
 
 		setSessionCookie(w, token)
+
+		// Dev-only: devwork@mesh.com always triggers the onboarding flow so
+		// the onboarding UI can be iterated on without re-registering each time.
+		showOnboarding := false
+		if os.Getenv("APP_ENV") != "production" && req.Email == "devwork@mesh.com" {
+			showOnboarding = true
+		}
+
 		shared.WriteJSON(w, http.StatusOK, map[string]any{
 			"ok":              true,
-			"show_onboarding": false,
+			"show_onboarding": showOnboarding,
 		})
 	}
 }
