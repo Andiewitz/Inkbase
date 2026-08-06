@@ -53,7 +53,7 @@ export default function LoginForm() {
         return;
       }
       // Session cookie is set by the server — no token handling needed here.
-      window.location.href = "/";
+      window.location.href = "/dashboard";
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
