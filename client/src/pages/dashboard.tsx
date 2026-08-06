@@ -10,7 +10,18 @@ type Screen = "bonjour" | "onboarding" | "dashboard";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [screen, setScreen] = useState<Screen>("dashboard");
+  const [screen, setScreen] = useState<Screen>(() => {
+    // Synchronous read before first paint — eliminates the flash-of-dashboard.
+    // typeof window guard keeps SSR safe.
+    if (typeof window === "undefined") return "dashboard";
+    if (
+      window.location.search.includes("onboarding=true") ||
+      sessionStorage.getItem("inkbase_show_onboarding") === "true"
+    ) {
+      return "bonjour";
+    }
+    return "dashboard";
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
