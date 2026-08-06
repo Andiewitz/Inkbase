@@ -14,7 +14,7 @@ export function NewDocumentCard({
   disabled?: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex h-full flex-col items-center">
       <motion.button
         type="button"
         onClick={onClick}
@@ -37,14 +37,16 @@ export function NewDocumentCard({
           </div>
         )}
       </motion.button>
-      <span className="mt-2 text-xs font-medium text-gray-900 text-center truncate max-w-full">
-        {title}
-      </span>
-      {subtitle && (
-        <span className="text-[10px] text-gray-400 text-center truncate max-w-full">
-          {subtitle}
+      <div className="flex w-full flex-1 flex-col items-center justify-center px-1">
+        <span className="mt-2 text-xs font-medium text-gray-900 text-center truncate max-w-full">
+          {title}
         </span>
-      )}
+        {subtitle && (
+          <span className="text-[10px] text-gray-400 text-center truncate max-w-full">
+            {subtitle}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

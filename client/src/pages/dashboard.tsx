@@ -231,51 +231,7 @@ function DashboardMain({ documents }: { documents: DocumentItem[] }) {
         </header>
 
         <div className="max-w-6xl mx-auto py-6 px-8 space-y-8">
-          {/* Section 1: Start a new document (Google Docs Style Template Row) */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-800">
-                Start a new document
-              </h3>
-              <span className="text-xs font-medium text-gray-500 hover:text-gray-700 cursor-pointer">
-                Template gallery ↕
-              </span>
-            </div>
-
-            <div className="grid grid-cols-5 gap-4">
-              <NewDocumentCard
-                title="Blank Document"
-                onClick={() => {}}
-                disabled={atLimit}
-              />
-              <NewDocumentCard
-                title="Standard Manuscript"
-                subtitle="Book / Long-form"
-                onClick={() => {}}
-                disabled={atLimit}
-              />
-              <NewDocumentCard
-                title="Screenplay"
-                subtitle="Script Format"
-                onClick={() => {}}
-                disabled={atLimit}
-              />
-              <NewDocumentCard
-                title="Stage Play"
-                subtitle="Theatre Format"
-                onClick={() => {}}
-                disabled={atLimit}
-              />
-              <NewDocumentCard
-                title="Academic Paper"
-                subtitle="APA / MLA"
-                onClick={() => {}}
-                disabled={atLimit}
-              />
-            </div>
-          </div>
-
-          {/* Section 2: Recent documents (Cards ONLY with Text Preview) */}
+          {/* Recent documents (Cards ONLY with Text Preview) */}
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-gray-800">
@@ -301,6 +257,11 @@ function DashboardMain({ documents }: { documents: DocumentItem[] }) {
 
             {/* Document Cards Grid ONLY */}
             <div className="grid grid-cols-4 gap-5">
+              <NewDocumentCard
+                title="Import New Document"
+                onClick={() => {}}
+                disabled={atLimit}
+              />
               {documents.map((doc) => (
                 <DocumentCard
                   key={doc.id}

@@ -14,7 +14,7 @@ export function DocumentCard({
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.15 }}
       onClick={onClick}
-      className="group cursor-pointer flex flex-col rounded-xl border border-gray-200 bg-white overflow-hidden shadow-xs hover:shadow-md hover:border-gray-300 transition-all"
+      className="group flex h-full cursor-pointer flex-col rounded-xl border border-gray-200 bg-white overflow-hidden shadow-xs hover:shadow-md hover:border-gray-300 transition-all"
     >
       {/* Paper Sheet Preview Area */}
       <div className="relative aspect-[3/4] w-full bg-gray-50 border-b border-gray-100 p-4 overflow-hidden flex flex-col justify-start">
