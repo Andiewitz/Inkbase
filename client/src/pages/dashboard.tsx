@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bonjour } from "../components/ui/bonjour";
@@ -441,16 +441,22 @@ function DashboardMain({ projects }: { projects: Project[] }) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [screen, setScreen] = useState<Screen>(() => {
-    if (typeof window === "undefined") return "dashboard";
-    if (
+
+  // isMounted prevents SSR/client hydration mismatch.
+  // Server always renders a white placeholder; useLayoutEffect fires
+  // synchronously on the client before the first browser paint and sets
+  // the correct screen without a visible flash.
+  const [isMounted, setIsMounted] = useState(false);
+  const [screen, setScreen] = useState<Screen>("dashboard");
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    const hasOnboarding =
       window.location.search.includes("onboarding=true") ||
-      sessionStorage.getItem("inkbase_show_onboarding") === "true"
-    ) {
-      return "bonjour";
-    }
-    return "dashboard";
-  });
+      sessionStorage.getItem("inkbase_show_onboarding") === "true";
+    if (hasOnboarding) setScreen("bonjour");
+    setIsMounted(true);
+  }, []);
 
   const handleBonjourFinished = () => setScreen("onboarding");
 
@@ -463,6 +469,12 @@ export default function DashboardPage() {
   };
 
   const isOverlayActive = screen === "bonjour" || screen === "onboarding";
+
+  // Don't render the real page until after client mount — keeps SSR HTML
+  // identical to the initial client render and avoids hydration errors.
+  if (!isMounted) {
+    return <div className="fixed inset-0 bg-white" />;
+  }
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-white">
