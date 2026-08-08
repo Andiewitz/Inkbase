@@ -2,16 +2,18 @@
 
 import { useEffect, useLayoutEffect, useState } from "react";
 import { useRouter } from "next/router";
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ChevronDoubleLeftIcon,
-  ChevronDoubleRightIcon,
+  Bars3BottomLeftIcon,
+  Bars3Icon,
   DocumentIcon,
   DocumentTextIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import { GitBranchIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Logo from "../assets/logo.svg";
 import {
   DOCUMENTS,
   FREE_TIER_MAX,
@@ -55,20 +57,26 @@ function Sidebar({
   return (
     <aside
       className={cn(
-        "flex h-screen shrink-0 flex-col border-r border-gray-200 bg-white py-4 select-none transition-[width] duration-300 ease-in-out overflow-hidden",
+        "flex h-screen shrink-0 flex-col border-r border-gray-300 bg-white py-4 select-none transition-[width] duration-300 ease-in-out overflow-hidden shadow-[4px_0_8px_-6px_rgba(0,0,0,0.12)]",
         collapsed ? "w-16 px-2" : "w-60 px-3",
       )}
     >
-      {/* Workspace Branding */}
+      {/* Workspace Branding + Collapse Toggle */}
       <div
         className={cn(
           "flex items-center pb-4 border-b border-gray-100",
           collapsed ? "justify-center" : "gap-2.5 px-2",
         )}
       >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-900 text-sm font-bold text-white">
-          I
-        </div>
+        {!collapsed && (
+          <Image
+            src={Logo}
+            alt="Inkbase logo"
+            width={268}
+            height={545}
+            className="h-7 w-auto shrink-0"
+          />
+        )}
         {!collapsed && (
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold text-gray-900">Inkbase</p>
@@ -77,6 +85,19 @@ function Sidebar({
             </p>
           </div>
         )}
+        <button
+          type="button"
+          onClick={() => setCollapsed((c) => !c)}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-50 hover:text-gray-600"
+        >
+          {collapsed ? (
+            <Bars3Icon className="h-4 w-4" />
+          ) : (
+            <Bars3BottomLeftIcon className="h-4 w-4" />
+          )}
+        </button>
       </div>
 
       {/* Navigation */}
@@ -172,21 +193,6 @@ function Sidebar({
             </div>
           )}
         </div>
-
-        {/* Collapse Toggle */}
-        <button
-          type="button"
-          onClick={() => setCollapsed((c) => !c)}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="mt-2 flex w-full items-center justify-center rounded-lg py-2 text-gray-400 transition hover:bg-gray-50 hover:text-gray-600"
-        >
-          {collapsed ? (
-            <ChevronDoubleRightIcon className="h-4 w-4" />
-          ) : (
-            <ChevronDoubleLeftIcon className="h-4 w-4" />
-          )}
-        </button>
       </div>
     </aside>
   );

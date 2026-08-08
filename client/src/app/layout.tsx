@@ -17,6 +17,12 @@ const lobsterTwo = Lobster_Two({
 export const metadata: Metadata = {
   title: "Inkbase",
   description: "Next.js client with a Go backend",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", media: "(prefers-color-scheme: light)" },
+      { url: "/favicon-dark.svg", media: "(prefers-color-scheme: dark)" },
+    ],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -1,12 +1,9 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Loader2, Lock, Mail } from "lucide-react";
 import { motion } from "framer-motion";
-
-const LEFT_IMAGE =
-  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1200&q=80";
+import AuthHero from "@/components/ui/auth-hero";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -72,19 +69,12 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-white text-gray-900">
-      <div className="relative hidden w-1/2 md:block">
-        <Image
-          src={LEFT_IMAGE}
-          alt="Workspace with a laptop"
-          fill
-          sizes="50vw"
-          priority
-          className="object-cover"
-        />
+    <div className="flex h-screen max-h-screen w-full overflow-hidden bg-white text-gray-900">
+      <div className="hidden h-full w-1/2 lg:block">
+        <AuthHero />
       </div>
 
-      <div className="flex w-full flex-col items-center justify-center bg-white px-6 md:w-1/2">
+      <div className="flex h-full w-full flex-col items-center justify-center bg-white px-6 lg:w-1/2">
         <motion.form
           onSubmit={handleSubmit}
           variants={containerVariants}
