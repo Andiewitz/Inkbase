@@ -1,14 +1,15 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
   Users,
   GitFork,
   CheckCircle2,
   Heart,
-  ArrowRight,
-  Sparkle,
+  Check,
+  Wand2,
 } from "lucide-react";
 
 const featureVariants = {
@@ -20,20 +21,69 @@ const featureVariants = {
   }),
 };
 
-const floatCardVariants = {
-  hidden: { opacity: 0, scale: 0.95, y: 10 },
-  visible: (i: number) => ({
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: { delay: 0.12 * i + 0.3, duration: 0.4, ease: "easeOut" },
-  }),
-};
-
 export default function AuthHero() {
+  // Animation step loop:
+  // 0: Cursor moves to line 1 ("faces blank as stone")
+  // 1: Inline suggestion popup appears
+  // 2: Cursor clicks "Approve" button
+  // 3: Text morphs to "features carved like cold granite." with green check
+  // 4: Cursor moves to line 2 ("Elira hesitated")
+  // 5: Inline suggestion 2 appears
+  // 6: Cursor clicks "Approve" button
+  // 7: Text morphs to "Elira paused, steadying her breath."
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStep((prev) => (prev + 1) % 8);
+    }, 2400);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Determine line 1 & line 2 states based on step
+  const isLine1Approved = step >= 3 && step < 8;
+  const isLine2Approved = step >= 7;
+
+  // Determine inline popup visibility
+  const showPopup1 = step === 1 || step === 2;
+  const showPopup2 = step === 5 || step === 6;
+
+  // Determine cursor positions (x, y) relative to paper container
+  let cursorX = 140;
+  let cursorY = 220;
+  let isClicking = false;
+
+  if (step === 0) {
+    cursorX = 140;
+    cursorY = 190;
+  } else if (step === 1) {
+    cursorX = 230;
+    cursorY = 140;
+  } else if (step === 2) {
+    cursorX = 230;
+    cursorY = 140;
+    isClicking = true;
+  } else if (step === 3) {
+    cursorX = 250;
+    cursorY = 220;
+  } else if (step === 4) {
+    cursorX = 120;
+    cursorY = 270;
+  } else if (step === 5) {
+    cursorX = 220;
+    cursorY = 220;
+  } else if (step === 6) {
+    cursorX = 220;
+    cursorY = 220;
+    isClicking = true;
+  } else if (step === 7) {
+    cursorX = 280;
+    cursorY = 320;
+  }
+
   return (
     <div className="relative flex h-screen max-h-screen w-full flex-col justify-between overflow-hidden bg-[#FBF8F3] px-6 py-6 xl:px-10 xl:py-8 select-none">
-      {/* Background ambient glow */}
+      {/* Ambient background blur */}
       <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-purple-200/40 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 -right-20 h-72 w-72 rounded-full bg-amber-200/40 blur-3xl" />
 
@@ -60,11 +110,10 @@ export default function AuthHero() {
         </div>
       </div>
 
-      {/* Main Grid Content - Fits tightly inside viewport */}
+      {/* Main Grid Content */}
       <div className="relative z-10 my-auto grid w-full grid-cols-1 items-center gap-6 xl:grid-cols-12">
-        {/* Left Column: Headline & Features */}
-        <div className="flex flex-col justify-center xl:col-span-6 space-y-4">
-          {/* Headline */}
+        {/* Left Column: Copy & Value Proposition */}
+        <div className="flex flex-col justify-center xl:col-span-5 space-y-4">
           <div className="space-y-1.5">
             <h2 className="text-2xl lg:text-3xl xl:text-[2.2rem] font-extrabold leading-tight text-slate-900 tracking-tight">
               PR reviews, <br />
@@ -99,7 +148,6 @@ export default function AuthHero() {
 
           {/* Feature Bullets */}
           <div className="space-y-2.5 pt-1">
-            {/* Feature 1 */}
             <motion.div
               custom={0}
               variants={featureVariants}
@@ -120,7 +168,6 @@ export default function AuthHero() {
               </div>
             </motion.div>
 
-            {/* Feature 2 */}
             <motion.div
               custom={1}
               variants={featureVariants}
@@ -141,7 +188,6 @@ export default function AuthHero() {
               </div>
             </motion.div>
 
-            {/* Feature 3 */}
             <motion.div
               custom={2}
               variants={featureVariants}
@@ -162,7 +208,6 @@ export default function AuthHero() {
               </div>
             </motion.div>
 
-            {/* Feature 4 */}
             <motion.div
               custom={3}
               variants={featureVariants}
@@ -185,130 +230,220 @@ export default function AuthHero() {
           </div>
         </div>
 
-        {/* Right Column: Simulated Manuscript Preview */}
-        <div className="relative flex items-center justify-center xl:col-span-6">
-          {/* Manuscript Card */}
-          <div className="relative w-full max-w-xs xl:max-w-sm rounded-xl border border-amber-200/70 bg-[#FFFDF9] p-5 shadow-lg shadow-amber-950/5">
-            {/* Chapter Header */}
-            <div className="border-b border-amber-100 pb-2 mb-3">
-              <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">
-                CHAPTER 12
-              </span>
-              <h3 className="text-base font-serif font-bold text-slate-800 tracking-tight">
-                Dawn of Nothing
-              </h3>
-            </div>
+        {/* Right Column: Standard US Letter / Bond Paper Mockup (8.5 x 11 Aspect Ratio) */}
+        <div className="relative flex items-center justify-center xl:col-span-7">
+          <div className="relative w-full max-w-[320px] sm:max-w-[360px] xl:max-w-[390px] aspect-[8.5/11] rounded-lg border border-amber-200/80 bg-[#FFFDF9] p-6 xl:p-7 shadow-2xl shadow-slate-900/10 flex flex-col justify-between overflow-hidden">
+            {/* Watermark / Page Top Metadata */}
+            <div>
+              <div className="flex items-center justify-between border-b border-amber-100/80 pb-3 mb-4">
+                <div>
+                  <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">
+                    CHAPTER 12
+                  </span>
+                  <h3 className="text-base xl:text-lg font-serif font-bold text-slate-900 tracking-tight">
+                    Dawn of Nothing
+                  </h3>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">
+                  p. 142
+                </span>
+              </div>
 
-            {/* Manuscript Lines */}
-            <div className="space-y-2.5 font-serif text-xs text-slate-700 leading-normal">
-              <p>
-                The wind clawed at her coat as she stepped into the courtyard.
-                Guards lined the walls,{" "}
-                <mark className="bg-rose-100 text-rose-900 px-1 py-0.5 rounded font-sans text-[11px] border-b border-rose-300">
-                  faces blank as stone.
-                </mark>
-              </p>
+              {/* Manuscript Content */}
+              <div className="space-y-4 font-serif text-xs xl:text-sm text-slate-800 leading-relaxed">
+                <p>
+                  The wind clawed at her coat as she stepped into the courtyard.
+                  Guards lined the walls,{" "}
+                  <AnimatePresence mode="wait">
+                    {!isLine1Approved ? (
+                      <motion.mark
+                        key="line1-orig"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="bg-purple-100 text-purple-950 px-1.5 py-0.5 rounded font-sans text-xs font-medium border-b-2 border-purple-400 inline-flex items-center gap-1"
+                      >
+                        <span>faces blank as stone.</span>
+                      </motion.mark>
+                    ) : (
+                      <motion.mark
+                        key="line1-new"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-emerald-100 text-emerald-950 px-1.5 py-0.5 rounded font-sans text-xs font-semibold border-b-2 border-emerald-400 inline-flex items-center gap-1 shadow-sm"
+                      >
+                        <Check className="h-3 w-3 text-emerald-600" />
+                        <span>features carved like cold granite.</span>
+                      </motion.mark>
+                    )}
+                  </AnimatePresence>{" "}
+                  Somewhere beyond, the city waited.
+                </p>
 
-              <p>
-                <mark className="bg-emerald-100 text-emerald-900 px-1 py-0.5 rounded font-sans text-[11px] border-b border-emerald-300">
-                  Elira hesitated. She wasn&apos;t sure she was ready for what
-                  came next.
-                </mark>
-              </p>
+                <p>
+                  <AnimatePresence mode="wait">
+                    {!isLine2Approved ? (
+                      <motion.mark
+                        key="line2-orig"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="bg-amber-100 text-amber-950 px-1.5 py-0.5 rounded font-sans text-xs font-medium border-b-2 border-amber-400"
+                      >
+                        Elira hesitated.
+                      </motion.mark>
+                    ) : (
+                      <motion.mark
+                        key="line2-new"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-emerald-100 text-emerald-950 px-1.5 py-0.5 rounded font-sans text-xs font-semibold border-b-2 border-emerald-400 inline-flex items-center gap-1 shadow-sm"
+                      >
+                        <Check className="h-3 w-3 text-emerald-600" />
+                        <span>Elira paused, steadying her breath.</span>
+                      </motion.mark>
+                    )}
+                  </AnimatePresence>{" "}
+                  She wasn&apos;t sure she was ready for what came next.
+                </p>
 
-              <p>
-                <mark className="bg-amber-100 text-amber-900 px-1 py-0.5 rounded font-sans text-[11px] border-b border-amber-300">
+                <p className="text-slate-600">
                   The letter trembled in her hands. It had changed everything.
-                </mark>
-              </p>
+                </p>
+              </div>
+
+              {/* Skeleton lines for rest of page */}
+              <div className="mt-6 space-y-2">
+                <div className="h-1.5 w-11/12 rounded-full bg-slate-100" />
+                <div className="h-1.5 w-4/5 rounded-full bg-slate-100" />
+                <div className="h-1.5 w-full rounded-full bg-slate-100" />
+                <div className="h-1.5 w-2/3 rounded-full bg-slate-100" />
+              </div>
             </div>
 
-            {/* Skeleton placeholder lines */}
-            <div className="mt-4 space-y-1.5">
-              <div className="h-1 w-3/4 rounded-full bg-slate-100" />
-              <div className="h-1 w-full rounded-full bg-slate-100" />
+            {/* Bond Paper Footer */}
+            <div className="pt-4 border-t border-amber-100/60 flex items-center justify-between text-[10px] font-mono text-slate-400">
+              <span>MANUSCRIPT_DRAFT_V3</span>
+              <span>WORD COUNT: 42,190</span>
             </div>
-          </div>
 
-          {/* Floating Suggestion Cards */}
-          <div className="absolute inset-0 pointer-events-none flex flex-col justify-between py-1">
-            {/* Suggestion Card 1: Clarity */}
-            <motion.div
-              custom={0}
-              variants={floatCardVariants}
-              initial="hidden"
-              animate="visible"
-              className="pointer-events-auto ml-auto w-48 xl:w-56 rounded-lg border border-rose-100 bg-white/95 p-2.5 shadow-md backdrop-blur-sm -translate-y-2 translate-x-3"
-            >
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-rose-600">
-                <Sparkle className="h-3 w-3 fill-rose-500 text-rose-500" />
-                <span>Clarity</span>
-              </div>
-              <p className="mt-0.5 text-[10px] leading-tight text-slate-600">
-                &quot;Faces blank as stone&quot; is a common phrase. Consider a
-                more specific image.
-              </p>
-              <button
-                type="button"
-                className="mt-1.5 flex items-center gap-1 rounded bg-rose-50 px-2 py-0.5 text-[9px] font-semibold text-rose-700 hover:bg-rose-100 transition-colors"
-              >
-                <span>Show suggestion</span>
-                <ArrowRight className="h-2 w-2" />
-              </button>
-            </motion.div>
+            {/* INLINE AI SUGGESTION POPUP 1 */}
+            <AnimatePresence>
+              {showPopup1 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.92 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.92 }}
+                  className="absolute top-[80px] left-[40px] z-30 w-64 rounded-xl border border-purple-200 bg-white p-3 shadow-xl shadow-purple-900/10"
+                >
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700">
+                      <Wand2 className="h-3.5 w-3.5" />
+                      <span>AI Clarity Review</span>
+                    </div>
+                    <span className="text-[9px] bg-purple-50 text-purple-600 font-semibold px-1.5 py-0.5 rounded">
+                      High Confidence
+                    </span>
+                  </div>
 
-            {/* Suggestion Card 2: Consistency */}
-            <motion.div
-              custom={1}
-              variants={floatCardVariants}
-              initial="hidden"
-              animate="visible"
-              className="pointer-events-auto ml-auto w-48 xl:w-56 rounded-lg border border-emerald-100 bg-white/95 p-2.5 shadow-md backdrop-blur-sm translate-x-5 my-auto"
-            >
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600">
-                <Users className="h-3 w-3 text-emerald-600" />
-                <span>Consistency</span>
-              </div>
-              <p className="mt-0.5 text-[10px] leading-tight text-slate-600">
-                Elira&apos;s hesitation here contradicts her decision in ch. 11.
-              </p>
-              <button
-                type="button"
-                className="mt-1.5 flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors"
-              >
-                <span>Review context</span>
-                <ArrowRight className="h-2 w-2" />
-              </button>
-            </motion.div>
+                  <p className="mt-1.5 text-[11px] text-slate-600 leading-snug">
+                    Replace cliché phrase with evocative imagery:
+                  </p>
 
-            {/* Suggestion Card 3: Structure */}
+                  <div className="mt-1.5 rounded bg-purple-50 p-1.5 text-[11px] font-medium text-purple-900 border border-purple-100">
+                    &quot;features carved like cold granite.&quot;
+                  </div>
+
+                  <div className="mt-2.5 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      className={`flex items-center gap-1 rounded-md px-3 py-1 text-xs font-bold text-white transition-all ${
+                        isClicking && step === 2
+                          ? "bg-purple-800 scale-95"
+                          : "bg-purple-600 hover:bg-purple-700 shadow-sm"
+                      }`}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      <span>Approve</span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* INLINE AI SUGGESTION POPUP 2 */}
+            <AnimatePresence>
+              {showPopup2 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.92 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.92 }}
+                  className="absolute top-[160px] left-[30px] z-30 w-64 rounded-xl border border-amber-200 bg-white p-3 shadow-xl shadow-amber-900/10"
+                >
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700">
+                      <Wand2 className="h-3.5 w-3.5" />
+                      <span>Pacing Suggestion</span>
+                    </div>
+                    <span className="text-[9px] bg-amber-50 text-amber-700 font-semibold px-1.5 py-0.5 rounded">
+                      Enhance Tension
+                    </span>
+                  </div>
+
+                  <p className="mt-1.5 text-[11px] text-slate-600 leading-snug">
+                    Make reaction active &amp; vivid:
+                  </p>
+
+                  <div className="mt-1.5 rounded bg-amber-50 p-1.5 text-[11px] font-medium text-amber-950 border border-amber-100">
+                    &quot;Elira paused, steadying her breath.&quot;
+                  </div>
+
+                  <div className="mt-2.5 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      className={`flex items-center gap-1 rounded-md px-3 py-1 text-xs font-bold text-white transition-all ${
+                        isClicking && step === 6
+                          ? "bg-amber-700 scale-95"
+                          : "bg-amber-600 hover:bg-amber-700 shadow-sm"
+                      }`}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      <span>Approve</span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* ANIMATED SVG CURSOR */}
             <motion.div
-              custom={2}
-              variants={floatCardVariants}
-              initial="hidden"
-              animate="visible"
-              className="pointer-events-auto ml-auto w-48 xl:w-56 rounded-lg border border-amber-100 bg-white/95 p-2.5 shadow-md backdrop-blur-sm translate-y-2 translate-x-2"
+              animate={{ x: cursorX, y: cursorY, scale: isClicking ? 0.85 : 1 }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
+              className="absolute top-0 left-0 z-40 pointer-events-none drop-shadow-md"
             >
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-600">
-                <GitFork className="h-3 w-3 text-amber-600" />
-                <span>Structure</span>
-              </div>
-              <p className="mt-0.5 text-[10px] leading-tight text-slate-600">
-                Great midpoint. Consider raising the stakes here.
-              </p>
-              <button
-                type="button"
-                className="mt-1.5 flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[9px] font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <span>See suggestions</span>
-                <ArrowRight className="h-2 w-2" />
-              </button>
+                <path
+                  d="M5.65376 12.3673H5.46026L5.31717 12.4976L0.500002 16.8829L0.500002 1.17157L17.2132 12.3673H5.65376Z"
+                  fill="#7C3AED"
+                  stroke="#FFFFFF"
+                  strokeWidth="1.5"
+                />
+              </svg>
+              <div className="ml-3 -mt-1 rounded-full bg-purple-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-sm">
+                AI Editor
+              </div>
             </motion.div>
           </div>
         </div>
       </div>
 
-      {/* Footer Tagline */}
+      {/* Tagline Footer */}
       <div className="relative z-10 shrink-0 pt-2 flex items-center justify-between">
         <div>
           <p
