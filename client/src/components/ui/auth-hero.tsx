@@ -23,62 +23,60 @@ const featureVariants = {
 
 export default function AuthHero() {
   // Animation step loop:
-  // 0: Cursor moves to line 1 ("faces blank as stone")
-  // 1: Inline suggestion popup appears
-  // 2: Cursor clicks "Approve" button
-  // 3: Text morphs to "features carved like cold granite." with green check
+  // 0: Cursor hovers line 1 ("faces blank as stone")
+  // 1: Popup 1 appears, cursor moves directly to Approve button
+  // 2: Cursor clicks Approve button (ripple effect + press)
+  // 3: Text 1 morphs to "features carved like cold granite."
   // 4: Cursor moves to line 2 ("Elira hesitated")
-  // 5: Inline suggestion 2 appears
-  // 6: Cursor clicks "Approve" button
-  // 7: Text morphs to "Elira paused, steadying her breath."
+  // 5: Popup 2 appears, cursor moves to Approve button
+  // 6: Cursor clicks Approve button (ripple effect + press)
+  // 7: Text 2 morphs to "Elira paused, steadying her breath."
   const [step, setStep] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setStep((prev) => (prev + 1) % 8);
-    }, 2400);
+    }, 2200);
     return () => clearInterval(timer);
   }, []);
 
-  // Determine line 1 & line 2 states based on step
   const isLine1Approved = step >= 3 && step < 8;
   const isLine2Approved = step >= 7;
 
-  // Determine inline popup visibility
   const showPopup1 = step === 1 || step === 2;
   const showPopup2 = step === 5 || step === 6;
 
-  // Determine cursor positions (x, y) relative to paper container
+  // Exact coordinates for pointer tip landing precisely on the center of the "Approve" button
   let cursorX = 140;
-  let cursorY = 220;
+  let cursorY = 100;
   let isClicking = false;
 
   if (step === 0) {
     cursorX = 140;
-    cursorY = 190;
+    cursorY = 100;
   } else if (step === 1) {
-    cursorX = 230;
-    cursorY = 140;
+    cursorX = 234;
+    cursorY = 194;
   } else if (step === 2) {
-    cursorX = 230;
-    cursorY = 140;
+    cursorX = 234;
+    cursorY = 194;
     isClicking = true;
   } else if (step === 3) {
-    cursorX = 250;
-    cursorY = 220;
+    cursorX = 180;
+    cursorY = 140;
   } else if (step === 4) {
-    cursorX = 120;
-    cursorY = 270;
+    cursorX = 130;
+    cursorY = 180;
   } else if (step === 5) {
-    cursorX = 220;
-    cursorY = 220;
+    cursorX = 229;
+    cursorY = 289;
   } else if (step === 6) {
-    cursorX = 220;
-    cursorY = 220;
+    cursorX = 229;
+    cursorY = 289;
     isClicking = true;
   } else if (step === 7) {
-    cursorX = 280;
-    cursorY = 320;
+    cursorX = 260;
+    cursorY = 340;
   }
 
   return (
@@ -230,10 +228,10 @@ export default function AuthHero() {
           </div>
         </div>
 
-        {/* Right Column: Standard US Letter / Bond Paper Mockup (8.5 x 11 Aspect Ratio) */}
+        {/* Right Column: Standard US Letter / Bond Paper Mockup */}
         <div className="relative flex items-center justify-center xl:col-span-7">
           <div className="relative w-full max-w-[320px] sm:max-w-[360px] xl:max-w-[390px] aspect-[8.5/11] rounded-lg border border-amber-200/80 bg-[#FFFDF9] p-6 xl:p-7 shadow-2xl shadow-slate-900/10 flex flex-col justify-between overflow-hidden">
-            {/* Watermark / Page Top Metadata */}
+            {/* Header */}
             <div>
               <div className="flex items-center justify-between border-b border-amber-100/80 pb-3 mb-4">
                 <div>
@@ -312,7 +310,7 @@ export default function AuthHero() {
                 </p>
               </div>
 
-              {/* Skeleton lines for rest of page */}
+              {/* Skeleton lines */}
               <div className="mt-6 space-y-2">
                 <div className="h-1.5 w-11/12 rounded-full bg-slate-100" />
                 <div className="h-1.5 w-4/5 rounded-full bg-slate-100" />
@@ -321,7 +319,7 @@ export default function AuthHero() {
               </div>
             </div>
 
-            {/* Bond Paper Footer */}
+            {/* Footer */}
             <div className="pt-4 border-t border-amber-100/60 flex items-center justify-between text-[10px] font-mono text-slate-400">
               <span>MANUSCRIPT_DRAFT_V3</span>
               <span>WORD COUNT: 42,190</span>
@@ -334,7 +332,7 @@ export default function AuthHero() {
                   initial={{ opacity: 0, y: -8, scale: 0.92 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.92 }}
-                  className="absolute top-[80px] left-[40px] z-30 w-64 rounded-xl border border-purple-200 bg-white p-3 shadow-xl shadow-purple-900/10"
+                  className="absolute top-[75px] left-[30px] z-30 w-[260px] rounded-xl border border-purple-200 bg-white p-3 shadow-xl shadow-purple-900/10"
                 >
                   <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700">
@@ -354,18 +352,28 @@ export default function AuthHero() {
                     &quot;features carved like cold granite.&quot;
                   </div>
 
-                  <div className="mt-2.5 flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      className={`flex items-center gap-1 rounded-md px-3 py-1 text-xs font-bold text-white transition-all ${
-                        isClicking && step === 2
-                          ? "bg-purple-800 scale-95"
-                          : "bg-purple-600 hover:bg-purple-700 shadow-sm"
-                      }`}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                      <span>Approve</span>
-                    </button>
+                  <div className="mt-2.5 flex items-center justify-end">
+                    <div className="relative">
+                      {isClicking && step === 2 && (
+                        <motion.span
+                          initial={{ scale: 0.8, opacity: 0.8 }}
+                          animate={{ scale: 1.5, opacity: 0 }}
+                          transition={{ duration: 0.4 }}
+                          className="absolute inset-0 rounded-md bg-purple-400 pointer-events-none"
+                        />
+                      )}
+                      <button
+                        type="button"
+                        className={`flex items-center gap-1 rounded-md px-3.5 py-1 text-xs font-bold text-white transition-all shadow-sm ${
+                          isClicking && step === 2
+                            ? "bg-purple-800 scale-90 ring-2 ring-purple-400"
+                            : "bg-purple-600 hover:bg-purple-700"
+                        }`}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                        <span>Approve</span>
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -378,7 +386,7 @@ export default function AuthHero() {
                   initial={{ opacity: 0, y: -8, scale: 0.92 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.92 }}
-                  className="absolute top-[160px] left-[30px] z-30 w-64 rounded-xl border border-amber-200 bg-white p-3 shadow-xl shadow-amber-900/10"
+                  className="absolute top-[170px] left-[25px] z-30 w-[260px] rounded-xl border border-amber-200 bg-white p-3 shadow-xl shadow-amber-900/10"
                 >
                   <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700">
@@ -398,18 +406,28 @@ export default function AuthHero() {
                     &quot;Elira paused, steadying her breath.&quot;
                   </div>
 
-                  <div className="mt-2.5 flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      className={`flex items-center gap-1 rounded-md px-3 py-1 text-xs font-bold text-white transition-all ${
-                        isClicking && step === 6
-                          ? "bg-amber-700 scale-95"
-                          : "bg-amber-600 hover:bg-amber-700 shadow-sm"
-                      }`}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                      <span>Approve</span>
-                    </button>
+                  <div className="mt-2.5 flex items-center justify-end">
+                    <div className="relative">
+                      {isClicking && step === 6 && (
+                        <motion.span
+                          initial={{ scale: 0.8, opacity: 0.8 }}
+                          animate={{ scale: 1.5, opacity: 0 }}
+                          transition={{ duration: 0.4 }}
+                          className="absolute inset-0 rounded-md bg-amber-400 pointer-events-none"
+                        />
+                      )}
+                      <button
+                        type="button"
+                        className={`flex items-center gap-1 rounded-md px-3.5 py-1 text-xs font-bold text-white transition-all shadow-sm ${
+                          isClicking && step === 6
+                            ? "bg-amber-800 scale-90 ring-2 ring-amber-400"
+                            : "bg-amber-600 hover:bg-amber-700"
+                        }`}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                        <span>Approve</span>
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -417,13 +435,13 @@ export default function AuthHero() {
 
             {/* ANIMATED SVG CURSOR */}
             <motion.div
-              animate={{ x: cursorX, y: cursorY, scale: isClicking ? 0.85 : 1 }}
-              transition={{ duration: 0.6, ease: "easeInOut" }}
+              animate={{ x: cursorX, y: cursorY, scale: isClicking ? 0.82 : 1 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
               className="absolute top-0 left-0 z-40 pointer-events-none drop-shadow-md"
             >
               <svg
-                width="24"
-                height="24"
+                width="22"
+                height="22"
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
