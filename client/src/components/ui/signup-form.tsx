@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
-import { Loader2, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 import AuthHero from "@/components/ui/auth-hero";
 
@@ -20,6 +20,7 @@ const itemVariants = {
 
 export default function SignupForm() {
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -151,13 +152,25 @@ export default function SignupForm() {
             <div className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-full border border-gray-400 bg-white pl-6 shadow-sm transition-colors focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
               <Lock className="h-4 w-4 shrink-0 text-gray-500" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="••••••••"
                 minLength={8}
                 required
                 className="h-full w-full bg-white text-sm text-gray-900 outline-none placeholder:text-gray-400"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="flex h-12 w-12 shrink-0 items-center justify-center text-gray-400 transition-colors hover:text-gray-600"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
             </div>
             <p className="pl-4 text-xs text-gray-500">
               Must be at least 8 characters

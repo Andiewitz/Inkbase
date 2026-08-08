@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
-import { Loader2, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 import AuthHero from "@/components/ui/auth-hero";
 
@@ -20,6 +20,7 @@ const itemVariants = {
 
 export default function LoginForm() {
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -150,12 +151,24 @@ export default function LoginForm() {
           >
             <Lock className="h-4 w-4 shrink-0 text-gray-500" />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               name="password"
               placeholder="••••••••"
               required
               className="h-full w-full bg-white text-sm text-gray-900 outline-none placeholder:text-gray-400"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="flex h-12 w-12 shrink-0 items-center justify-center text-gray-400 transition-colors hover:text-gray-600"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
           </motion.div>
 
           <motion.div
