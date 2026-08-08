@@ -2,11 +2,13 @@ package authdb
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 
 	_ "github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 	_ "modernc.org/sqlite"
 )
 
@@ -43,6 +45,12 @@ func Open() (*sql.DB, error) {
 		return nil, fmt.Errorf("migrate: %w", err)
 	}
 
+	if env != "production" {
+		if err = seedDevUser(db); err != nil {
+			log.Printf("db: warning: seed dev user: %v", err)
+		}
+	}
+
 	log.Printf("db: connected (%s)", dbLabel(env))
 	return db, nil
 }
@@ -71,3 +79,23 @@ func migrate(db *sql.DB, env string) error {
 	`, autoInc))
 	return err
 }
+
+func seedDevUser(db *sql.DB) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("generate dev bcrypt hash: %w", err)
+	}
+
+	var userID int64
+	err = db.QueryRow(`SELECT id FROM users WHERE email = 'devwork@mesh.com'`).Scan(&userID)
+	if errors.Is(err, sql.ErrNoRows) {
+		_, err = db.Exec(`INSERT INTO users (email, password_hash) VALUES ('devwork@mesh.com', ?)`, string(hash))
+		return err
+	} else if err == nil {
+		_, err = db.Exec(`UPDATE users SET password_hash = ? WHERE email = 'devwork@mesh.com'`, string(hash))
+		return err
+	}
+	return err
+}
+
+

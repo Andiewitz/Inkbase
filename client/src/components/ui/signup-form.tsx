@@ -19,6 +19,8 @@ const itemVariants = {
 };
 
 export default function SignupForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,11 +30,8 @@ export default function SignupForm() {
     setLoading(true);
     setError(null);
 
-    const form = new FormData(event.currentTarget);
-    const email = String(form.get("email") ?? "");
-    const password = String(form.get("password") ?? "");
-
-    if (!email || !password) {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
       setError("Please fill in all fields.");
       setLoading(false);
       return;
@@ -48,7 +47,7 @@ export default function SignupForm() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: trimmedEmail, password }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -128,7 +127,7 @@ export default function SignupForm() {
 
           <motion.div variants={itemVariants} className="my-5 flex w-full items-center gap-4">
             <div className="h-px w-full bg-gray-200" />
-            <p className="w-full text-nowrap text-sm text-gray-400">
+            <p className="w-full text-nowrap text-xs text-gray-400">
               or sign up with email
             </p>
             <div className="h-px w-full bg-gray-200" />
@@ -142,6 +141,8 @@ export default function SignupForm() {
             <input
               type="email"
               name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="example@gmail.com"
               required
               className="h-full w-full bg-white text-sm text-gray-900 outline-none placeholder:text-gray-400"
@@ -154,6 +155,8 @@ export default function SignupForm() {
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 minLength={8}
                 required
@@ -187,7 +190,7 @@ export default function SignupForm() {
               id="terms"
               required
             />
-            <label className="text-sm cursor-pointer select-none text-gray-600" htmlFor="terms">
+            <label className="text-xs cursor-pointer select-none text-gray-600" htmlFor="terms">
               I agree to the{" "}
               <a className="text-indigo-600 hover:underline" href="#">
                 Terms &amp; Conditions
@@ -196,24 +199,24 @@ export default function SignupForm() {
           </motion.div>
 
           {error && (
-            <motion.p variants={itemVariants} className="mt-4 text-sm text-red-500">
+            <motion.div variants={itemVariants} className="mt-4 rounded-lg bg-red-50 p-2.5 text-center text-xs text-red-600 font-medium w-full border border-red-100">
               {error}
-            </motion.p>
+            </motion.div>
           )}
 
           <motion.button
             variants={itemVariants}
             type="submit"
             disabled={loading}
-            className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-indigo-600 font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-60"
+            className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-indigo-600 font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-60 shadow-md shadow-indigo-200"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {loading ? "Creating account…" : "Create account"}
           </motion.button>
 
-          <motion.p variants={itemVariants} className="mt-4 text-sm text-gray-500">
+          <motion.p variants={itemVariants} className="mt-4 text-xs text-gray-500">
             Already have an account?{" "}
-            <Link className="font-medium text-indigo-600 hover:underline" href="/auth/login">
+            <Link className="font-semibold text-indigo-600 hover:underline" href="/auth/login">
               Sign in
             </Link>
           </motion.p>
