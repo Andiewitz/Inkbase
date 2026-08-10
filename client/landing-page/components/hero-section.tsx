@@ -13,7 +13,6 @@ import { Logo } from "./logo";
 import { Button } from "./ui/button";
 import { AnimatedGroup } from "./animated-group";
 import { TextEffect } from "./text-effect";
-import { ManuscriptPreview } from "./manuscript-preview";
 
 const NAV_LINKS = [
   { label: "Features", href: "#features" },
@@ -61,15 +60,15 @@ export function HeroSection() {
       </header>
 
       {/* Hero */}
-      <AnimatedGroup className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center gap-12 px-6 py-14 lg:flex-row lg:px-10">
+      <AnimatedGroup className="relative z-10 mx-auto flex w-full max-w-4xl flex-1 flex-col items-center gap-6 px-6 py-14 lg:px-10">
         {/* Copy */}
-        <div className="flex flex-1 flex-col items-center gap-6 text-center lg:items-start lg:text-left">
+        <div className="flex w-full flex-col items-center gap-6 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-white/80 px-4 py-1.5 text-xs font-medium text-purple-700 shadow-sm backdrop-blur-sm font-satoshi">
             <Sparkles className="h-3.5 w-3.5 fill-purple-200 text-purple-600" />
             PR reviews, but for writing
           </div>
 
-          <h1 className="text-4xl font-bold leading-tight tracking-tight text-slate-900 md:text-5xl xl:text-6xl font-satoshi">
+          <h1 className="max-w-3xl text-4xl font-bold leading-tight tracking-tight text-slate-900 md:text-5xl xl:text-6xl font-satoshi">
             The better way to write your{" "}
             <span className="relative inline-block text-indigo-700">
               <TextEffect words={["manuscript", "novel", "screenplay", "memoir"]} />
@@ -90,13 +89,13 @@ export function HeroSection() {
             </span>
           </h1>
 
-          <p className="max-w-md text-sm leading-relaxed text-slate-600 md:text-base">
+          <p className="max-w-lg text-sm leading-relaxed text-slate-600 md:text-base">
             Inkbase reviews your manuscript line by line — suggesting edits,
             checking consistency, and helping you ship your{" "}
             <strong className="font-semibold text-indigo-900">best story</strong>.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <Button size="lg" asChild>
               <Link href="/auth/signup">Start writing free</Link>
             </Button>
@@ -106,7 +105,7 @@ export function HeroSection() {
           </div>
 
           {/* Personas */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             {PERSONAS.map(({ label, icon: Icon }) => (
               <span
                 key={label}
@@ -117,11 +116,6 @@ export function HeroSection() {
               </span>
             ))}
           </div>
-        </div>
-
-        {/* Product visual */}
-        <div className="flex flex-1 justify-center">
-          <ManuscriptPreview />
         </div>
       </AnimatedGroup>
     </div>
