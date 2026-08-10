@@ -17,7 +17,7 @@ const featureVariants = {
   visible: (i: number) => ({
     opacity: 1,
     x: 0,
-    transition: { delay: 0.08 * i + 0.1, duration: 0.35, ease: "easeOut" },
+    transition: { delay: 0.08 * i + 0.1, duration: 0.35, ease: "easeOut" as const },
   }),
 };
 
