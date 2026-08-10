@@ -13,9 +13,11 @@ var ErrEmailTaken = errors.New("email already registered")
 // ErrInvalidCredentials is returned when login email/password don't match.
 var ErrInvalidCredentials = errors.New("invalid email or password")
 
-// SetupResult contains the JWT token and onboarding flags for newly created accounts.
+// SetupResult contains the access/refresh tokens and onboarding flags for
+// newly created accounts.
 type SetupResult struct {
-	Token          string
+	AccessToken    string
+	RefreshToken   string
 	ShowOnboarding bool
 }
 
@@ -40,7 +42,7 @@ func (s *Service) Register(email, password string) (*SetupResult, error) {
 		return nil, fmt.Errorf("insert user: %w", err)
 	}
 
-	tokenID, err := s.createSession(userID)
+	tokenID, refreshToken, err := s.createSession(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +52,8 @@ func (s *Service) Register(email, password string) (*SetupResult, error) {
 		return nil, err
 	}
 	return &SetupResult{
-		Token:          token,
+		AccessToken:    token,
+		RefreshToken:   refreshToken,
 		ShowOnboarding: true,
 	}, nil
 }

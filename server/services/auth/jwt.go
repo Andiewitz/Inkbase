@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -11,18 +12,41 @@ import (
 )
 
 const (
-	tokenTTL      = 24 * time.Hour
-	tokenIssuer   = "inkbase"
-	tokenAudience = "inkbase-api"
+	// accessTokenTTL is the lifetime of a signed access JWT. It is deliberately
+	// short — the rotating refresh token is what keeps the user signed in.
+	accessTokenTTL = 15 * time.Minute
+	// refreshTokenTTL is the lifetime of an opaque refresh token and, by
+	// extension, the server-side session row it belongs to.
+	refreshTokenTTL = 7 * 24 * time.Hour
+	tokenIssuer     = "inkbase"
+	tokenAudience   = "inkbase-api"
 )
 
 // newTokenID returns a cryptographically random 32-byte hex string used as the
 // token ID (jti). It uniquely identifies a session for revocation and refresh.
 func newTokenID() string {
+	return newRandomToken()
+}
+
+// newRefreshToken returns a fresh opaque refresh token. Only its SHA-256 hash
+// is stored server-side, so a database leak does not expose usable tokens.
+func newRefreshToken() string {
+	return newRandomToken()
+}
+
+// hashRefreshToken returns the hex SHA-256 of a refresh token, the form in
+// which refresh tokens are persisted and looked up.
+func hashRefreshToken(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
+
+// newRandomToken returns a cryptographically random 32-byte hex string.
+func newRandomToken() string {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		// crypto/rand failing means the process cannot issue secure tokens.
-		panic(fmt.Sprintf("auth: generate token id: %v", err))
+		panic(fmt.Sprintf("auth: generate random token: %v", err))
 	}
 	return hex.EncodeToString(b)
 }
@@ -62,7 +86,7 @@ func SignToken(userID int64, tokenID string) (string, error) {
 			Issuer:    tokenIssuer,
 			Audience:  jwt.ClaimStrings{tokenAudience},
 			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(tokenTTL)),
+			ExpiresAt: jwt.NewNumericDate(now.Add(accessTokenTTL)),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, c)

@@ -82,16 +82,67 @@ func migrate(db *sql.DB, env string) error {
 	}
 
 	// Server-side sessions keyed by the JWT's jti. Deleting a row revokes the
-	// session — access and refresh tokens both die with it.
+	// session — access and refresh tokens both die with it. refresh_hash holds
+	// the SHA-256 of the opaque refresh token (never the raw token).
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS sessions (
-			id         TEXT NOT NULL PRIMARY KEY,
-			user_id    BIGINT NOT NULL REFERENCES users(id),
-			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			expires_at TIMESTAMP NOT NULL
+			id           TEXT NOT NULL PRIMARY KEY,
+			user_id      BIGINT NOT NULL REFERENCES users(id),
+			created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			expires_at   TIMESTAMP NOT NULL,
+			refresh_hash TEXT
 		)
 	`)
+	if err != nil {
+		return err
+	}
+
+	// The refresh_hash column only exists on tables created after this change.
+	// Add it for pre-existing sessions tables so the migration stays idempotent
+	// across an already-initialized database. SQLite cannot ALTER ADD COLUMN
+	// with UNIQUE, so uniqueness is enforced by a dedicated index instead.
+	if err := ensureRefreshHashColumn(db, env); err != nil {
+		return err
+	}
+	_, err = db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_refresh_hash ON sessions(refresh_hash)`)
 	return err
+}
+
+// ensureRefreshHashColumn adds the refresh_hash column to an older sessions
+// table, skipping when it is already present (fresh databases).
+func ensureRefreshHashColumn(db *sql.DB, env string) error {
+	exists, err := columnExists(db, env, "sessions", "refresh_hash")
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	_, err = db.Exec(`ALTER TABLE sessions ADD COLUMN refresh_hash TEXT`)
+	return err
+}
+
+// columnExists reports whether a column exists on a table, branching on the
+// dialect-specific catalog queries at the DB boundary.
+func columnExists(db *sql.DB, env, table, column string) (bool, error) {
+	var n int
+	if env == "production" {
+		err := db.QueryRow(
+			`SELECT COUNT(*) FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`,
+			table, column,
+		).Scan(&n)
+		if err != nil {
+			return false, err
+		}
+		return n > 0, nil
+	}
+	err := db.QueryRow(
+		`SELECT COUNT(*) FROM pragma_table_info(?) WHERE name = ?`, table, column,
+	).Scan(&n)
+	if err != nil {
+		return false, err
+	}
+	return n > 0, nil
 }
 
 func seedDevUser(db *sql.DB) error {

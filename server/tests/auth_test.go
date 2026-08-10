@@ -25,6 +25,9 @@ import (
 // unset. Tests rely on it to craft expired and tampered tokens.
 const devSecret = "dev-secret-change-me"
 
+// testRefreshMaxAge mirrors refreshTokenTTL (7 days) in services/auth/jwt.go.
+const testRefreshMaxAge = 7 * 24 * 60 * 60
+
 // testClaims mirrors the unexported claims struct in services/auth/jwt.go.
 type testClaims struct {
 	UserID int64 `json:"uid"`
@@ -90,6 +93,20 @@ func sessionCookie(t *testing.T, rec *httptest.ResponseRecorder) *http.Cookie {
 		}
 	}
 	t.Fatalf("inkbase_session cookie not found in response; status=%d body=%s",
+		rec.Code, rec.Body.String())
+	return nil
+}
+
+// refreshCookie extracts the inkbase_refresh cookie from a recorder response.
+// Fails the test immediately if the cookie is absent.
+func refreshCookie(t *testing.T, rec *httptest.ResponseRecorder) *http.Cookie {
+	t.Helper()
+	for _, c := range rec.Result().Cookies() {
+		if c.Name == "inkbase_refresh" {
+			return c
+		}
+	}
+	t.Fatalf("inkbase_refresh cookie not found in response; status=%d body=%s",
 		rec.Code, rec.Body.String())
 	return nil
 }
@@ -174,7 +191,8 @@ func sessionlessToken(t *testing.T) string {
 // ---------------------------------------------------------------------------
 
 // TestLoginCookieFlags verifies that a successful login response stamps a
-// session cookie with the required security flags.
+// session cookie with the required security flags, plus the rotating refresh
+// cookie with its own lifetime and restricted path.
 func TestLoginCookieFlags(t *testing.T) {
 	handler := api.New()
 	email := uniqueEmail(t)
@@ -198,8 +216,8 @@ func TestLoginCookieFlags(t *testing.T) {
 	if c.SameSite != http.SameSiteLaxMode {
 		t.Errorf("FAIL: cookie SameSite must be Lax (got %v) — Lax blocks cross-site POST, preventing CSRF", c.SameSite)
 	}
-	if c.MaxAge != 86400 {
-		t.Errorf("FAIL: cookie MaxAge must be 86400 (24 h), got %d", c.MaxAge)
+	if c.MaxAge != 900 {
+		t.Errorf("FAIL: session cookie MaxAge must be 900 (15 min access token), got %d", c.MaxAge)
 	}
 	// Secure is false in dev (no APP_ENV=production). Verified below.
 	if os.Getenv("APP_ENV") == "production" {
@@ -210,6 +228,21 @@ func TestLoginCookieFlags(t *testing.T) {
 		if c.Secure {
 			t.Error("FAIL: Secure should not be set in non-production (breaks plain HTTP dev server)")
 		}
+	}
+
+	// The refresh cookie must exist with its own flags and a restricted path.
+	rc := refreshCookie(t, rec)
+	if !rc.HttpOnly {
+		t.Error("FAIL: refresh cookie must be HttpOnly")
+	}
+	if rc.SameSite != http.SameSiteLaxMode {
+		t.Errorf("FAIL: refresh cookie SameSite must be Lax (got %v)", rc.SameSite)
+	}
+	if rc.MaxAge != testRefreshMaxAge {
+		t.Errorf("FAIL: refresh cookie MaxAge must be %d (7 days), got %d", testRefreshMaxAge, rc.MaxAge)
+	}
+	if rc.Path != "/api/auth" {
+		t.Errorf("FAIL: refresh cookie Path must be /api/auth so it is only sent to auth endpoints, got %q", rc.Path)
 	}
 }
 
@@ -495,14 +528,10 @@ func TestSessionlessTokenRejected(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // TestLogoutClearsSessionCookie verifies that POST /api/auth/logout responds
-// with a cookie that instructs the browser to delete the session.
-// NOTE: Because the JWT is stateless, the token itself remains cryptographically
-// valid until its ExpiresAt. Logout effectiveness relies on:
-//   a) the cookie being HttpOnly (raw token was never accessible to JS), and
-//   b) the browser honoring Max-Age=-1 and discarding the cookie immediately.
-//
-// A token blacklist would be required for true server-side invalidation and is
-// tracked as future work.
+// with cookies that instruct the browser to delete both the session and the
+// refresh cookie.
+// NOTE: With server-side sessions, revocation is now real — the session row is
+// deleted so both tokens die server-side regardless of the browser.
 func TestLogoutClearsSessionCookie(t *testing.T) {
 	handler := api.New()
 	rec := doRequest(handler, http.MethodPost, "/api/auth/logout", "10.0.0.7:1", nil)
@@ -511,17 +540,18 @@ func TestLogoutClearsSessionCookie(t *testing.T) {
 		t.Fatalf("FAIL: expected 200 from logout, got %d", rec.Code)
 	}
 
-	var cleared *http.Cookie
+	cleared := map[string]*http.Cookie{}
 	for _, c := range rec.Result().Cookies() {
-		if c.Name == "inkbase_session" {
-			cleared = c
+		cleared[c.Name] = c
+	}
+	for _, name := range []string{"inkbase_session", "inkbase_refresh"} {
+		c, ok := cleared[name]
+		if !ok {
+			t.Fatalf("FAIL: logout must return a %s cookie to clear it", name)
 		}
-	}
-	if cleared == nil {
-		t.Fatal("FAIL: logout must return an inkbase_session cookie to clear it")
-	}
-	if cleared.MaxAge >= 0 {
-		t.Errorf("FAIL: logout cookie MaxAge must be -1 (delete), got %d", cleared.MaxAge)
+		if c.MaxAge >= 0 {
+			t.Errorf("FAIL: %s cookie MaxAge must be -1 (delete), got %d", name, c.MaxAge)
+		}
 	}
 }
 
@@ -598,15 +628,126 @@ func TestLogoutRevokesSessionServerSide(t *testing.T) {
 // Refresh tokens
 // ---------------------------------------------------------------------------
 
-// TestRefreshTokens is intentionally skipped — Inkbase uses single-issue JWTs
-// with a 24-hour TTL. There is no refresh token mechanism. When refresh tokens
-// are implemented, this test should verify:
-//   - A refresh token is issued alongside the access token.
-//   - A valid refresh token exchanges for a new access token.
-//   - An expired or revoked refresh token is rejected.
-//   - Refresh tokens are stored server-side and can be invalidated on logout.
-func TestRefreshTokens(t *testing.T) {
-	t.Skip("refresh tokens not yet implemented — single-issue 24 h JWT only")
+// TestRefreshRotatesTokens verifies the full refresh lifecycle:
+//   - login issues an access cookie and a refresh cookie
+//   - POST /api/auth/refresh with the refresh cookie re-stamps both cookies
+//   - the OLD refresh token is dead after rotation — replaying it is refused
+//
+// Rotation is what stops a leaked refresh token from being usable forever.
+func TestRefreshRotatesTokens(t *testing.T) {
+	handler := api.New()
+	email := uniqueEmail(t)
+
+	rec := register(t, handler, email, "securepass1", "10.3.0.1:1")
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("register failed: %d %s", rec.Code, rec.Body.String())
+	}
+	oldRefresh := refreshCookie(t, rec)
+
+	// Refresh with the original refresh cookie.
+	rec = doRequest(handler, http.MethodPost, "/api/auth/refresh", "10.3.0.2:1", nil, oldRefresh)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("FAIL: refresh expected 200, got %d %s", rec.Code, rec.Body.String())
+	}
+
+	// Both cookies must be re-stamped.
+	access := sessionCookie(t, rec)
+	rotated := refreshCookie(t, rec)
+	if rotated.Value == oldRefresh.Value {
+		t.Fatal("FAIL: refresh token must rotate — new value equals old value")
+	}
+
+	// The rotated access cookie must work on a protected route.
+	rec = doRequest(handler, http.MethodGet, "/api/auth/me", "10.3.0.3:1", nil, access)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("FAIL: fresh access token expected 200, got %d", rec.Code)
+	}
+
+	// Replaying the ORIGINAL refresh token must now be refused.
+	rec = doRequest(handler, http.MethodPost, "/api/auth/refresh", "10.3.0.4:1", nil, oldRefresh)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("FAIL: replayed old refresh token expected 401 after rotation, got %d", rec.Code)
+	}
+
+	// The rotated refresh token still works.
+	rec = doRequest(handler, http.MethodPost, "/api/auth/refresh", "10.3.0.5:1", nil, rotated)
+	if rec.Code != http.StatusOK {
+		t.Errorf("FAIL: rotated refresh token expected 200, got %d", rec.Code)
+	}
+}
+
+// TestRefreshWithoutCookieRejected verifies that a refresh request with no
+// refresh cookie is refused.
+func TestRefreshWithoutCookieRejected(t *testing.T) {
+	handler := api.New()
+	rec := doRequest(handler, http.MethodPost, "/api/auth/refresh", "10.3.1.1:1", nil)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("FAIL: refresh without cookie expected 401, got %d", rec.Code)
+	}
+}
+
+// TestRefreshAfterLogoutRejected verifies that a revoked session's refresh
+// token is refused — the full logout → refresh cycle proves revocation is real.
+func TestRefreshAfterLogoutRejected(t *testing.T) {
+	handler := api.New()
+	email := uniqueEmail(t)
+
+	rec := register(t, handler, email, "securepass1", "10.3.2.1:1")
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("register failed: %d", rec.Code)
+	}
+	refresh := refreshCookie(t, rec)
+	session := sessionCookie(t, rec)
+
+	// Logout kills the session.
+	rec = doRequest(handler, http.MethodPost, "/api/auth/logout", "10.3.2.2:1", nil, refresh)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("logout failed: %d", rec.Code)
+	}
+
+	// Neither token works anymore.
+	rec = doRequest(handler, http.MethodPost, "/api/auth/refresh", "10.3.2.3:1", nil, refresh)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("FAIL: refresh after logout expected 401, got %d", rec.Code)
+	}
+	rec = doRequest(handler, http.MethodGet, "/api/auth/me", "10.3.2.4:1", nil, session)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("FAIL: access token after logout expected 401, got %d", rec.Code)
+	}
+}
+
+// TestRefreshThenLogoutFlow covers the steady-state loop the client will run:
+// refresh keeps the session alive, and a logout after a refresh still revokes
+// the (rotated) session completely.
+func TestRefreshThenLogoutFlow(t *testing.T) {
+	handler := api.New()
+	email := uniqueEmail(t)
+
+	rec := register(t, handler, email, "securepass1", "10.3.3.1:1")
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("register failed: %d", rec.Code)
+	}
+	refresh := refreshCookie(t, rec)
+
+	// Refresh once to rotate.
+	rec = doRequest(handler, http.MethodPost, "/api/auth/refresh", "10.3.3.2:1", nil, refresh)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("refresh failed: %d", rec.Code)
+	}
+	rotated := refreshCookie(t, rec)
+	access := sessionCookie(t, rec)
+
+	// Logout using the rotated refresh token.
+	rec = doRequest(handler, http.MethodPost, "/api/auth/logout", "10.3.3.3:1", nil, rotated)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("logout failed: %d", rec.Code)
+	}
+
+	// The rotated access token is dead.
+	rec = doRequest(handler, http.MethodGet, "/api/auth/me", "10.3.3.4:1", nil, access)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("FAIL: access token after refresh+logout expected 401, got %d", rec.Code)
+	}
 }
 
 // ---------------------------------------------------------------------------

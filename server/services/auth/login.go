@@ -18,37 +18,44 @@ func init() {
 	dummyHash, _ = bcrypt.GenerateFromPassword([]byte("inkbase-timing-dummy"), bcrypt.DefaultCost)
 }
 
-// Login verifies credentials and returns a fresh JWT on success.
-func (s *Service) Login(email, password string) (token string, err error) {
+// SignInResult is the outcome of a successful login: a short-lived access JWT
+// and a long-lived opaque refresh token, both carried as HttpOnly cookies.
+type SignInResult struct {
+	AccessToken  string
+	RefreshToken string
+}
+
+// Login verifies credentials and returns fresh access and refresh tokens.
+func (s *Service) Login(email, password string) (SignInResult, error) {
 	var (
 		userID       int64
 		passwordHash string
 	)
-	err = s.db.QueryRow(
+	err := s.db.QueryRow(
 		`SELECT id, password_hash FROM users WHERE email = ?`, email,
 	).Scan(&userID, &passwordHash)
 	if errors.Is(err, sql.ErrNoRows) {
 		// Unknown email — burn the same bcrypt cost as a real check so the
 		// response time does not reveal whether the email exists.
 		_ = bcrypt.CompareHashAndPassword(dummyHash, []byte(password))
-		return "", ErrInvalidCredentials
+		return SignInResult{}, ErrInvalidCredentials
 	}
 	if err != nil {
-		return "", fmt.Errorf("query user: %w", err)
+		return SignInResult{}, fmt.Errorf("query user: %w", err)
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password)); err != nil {
-		return "", ErrInvalidCredentials
+		return SignInResult{}, ErrInvalidCredentials
 	}
 
-	tokenID, err := s.createSession(userID)
+	tokenID, refreshToken, err := s.createSession(userID)
 	if err != nil {
-		return "", err
+		return SignInResult{}, err
 	}
 
-	token, err = SignToken(userID, tokenID)
+	token, err := SignToken(userID, tokenID)
 	if err != nil {
-		return "", err
+		return SignInResult{}, err
 	}
-	return token, nil
+	return SignInResult{AccessToken: token, RefreshToken: refreshToken}, nil
 }

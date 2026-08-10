@@ -24,6 +24,7 @@ func New() http.Handler {
 	mux.HandleFunc("POST /api/auth/register", handleRegister(authSvc))
 	mux.HandleFunc("POST /api/auth/login", handleLogin(authSvc))
 	mux.HandleFunc("POST /api/auth/logout", handleLogout(authSvc))
+	mux.HandleFunc("POST /api/auth/refresh", handleRefresh(authSvc))
 
 	// Auth — protected (RequireAuth reads the session cookie)
 	mux.Handle("GET /api/auth/me", RequireAuth(authSvc)(handleMe()))

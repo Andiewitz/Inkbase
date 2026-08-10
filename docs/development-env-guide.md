@@ -133,5 +133,20 @@ TRUST_PROXY=true
   limiter keys on the direct connection address and ignores forwarded headers —
   a spoofed header cannot bypass it.
 
+## Auth & sessions
+
+Sign-in issues two HttpOnly cookies:
+
+| Cookie | Content | Lifetime | Path |
+|---|---|---|---|
+| `inkbase_session` | short-lived access JWT (`iss`/`aud`/`jti`) | 15 min | `/` |
+| `inkbase_refresh` | opaque rotating refresh token (SHA-256 hashed server-side) | 7 days | `/api/auth` |
+
+- Every protected request is verified against the `sessions` table — logout
+  deletes the row, so both tokens die immediately.
+- `POST /api/auth/refresh` exchanges the refresh cookie for a fresh access JWT
+  and a rotated refresh token; a replayed old refresh token is refused.
+- Both are `HttpOnly` + `SameSite=Lax` (Secure only in production).
+
 No other change is required — the same binary that runs locally will connect
 to PostgreSQL when `APP_ENV=production`.

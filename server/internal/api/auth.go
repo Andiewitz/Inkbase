@@ -10,8 +10,12 @@ import (
 	"inkbase/server/shared"
 )
 
-// sessionMaxAge matches the JWT TTL defined in services/auth/jwt.go (24 h).
-const sessionMaxAge = 24 * 60 * 60
+// sessionMaxAge matches the access JWT TTL (15 min) defined in
+// services/auth/jwt.go. The refresh cookie carries the long-lived session.
+const sessionMaxAge = 15 * 60
+
+// refreshMaxAge matches refreshTokenTTL (7 days).
+const refreshMaxAge = 7 * 24 * 60 * 60
 
 type registerRequest struct {
 	Email    string `json:"email"`
@@ -23,9 +27,9 @@ type loginRequest struct {
 	Password string `json:"password"`
 }
 
-// setSessionCookie writes the JWT as an HttpOnly cookie so the browser carries
-// it on every subsequent request automatically — no localStorage, no manual
-// Authorization header.
+// setSessionCookie writes the access JWT as an HttpOnly cookie so the browser
+// carries it on every subsequent request automatically — no localStorage, no
+// manual Authorization header. Short-lived; refreshed via the refresh cookie.
 func setSessionCookie(w http.ResponseWriter, token string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
@@ -35,6 +39,21 @@ func setSessionCookie(w http.ResponseWriter, token string) {
 		Secure:   os.Getenv("APP_ENV") == "production",
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   sessionMaxAge,
+	})
+}
+
+// setRefreshCookie writes the opaque rotating refresh token. Its path is
+// restricted to /api/auth so the browser only sends it to auth endpoints,
+// shrinking its exposure surface.
+func setRefreshCookie(w http.ResponseWriter, token string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     refreshCookieName,
+		Value:    token,
+		Path:     "/api/auth",
+		HttpOnly: true,
+		Secure:   os.Getenv("APP_ENV") == "production",
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   refreshMaxAge,
 	})
 }
 
@@ -64,7 +83,8 @@ func handleRegister(svc *auth.Service) http.HandlerFunc {
 			return
 		}
 
-		setSessionCookie(w, res.Token)
+		setSessionCookie(w, res.AccessToken)
+		setRefreshCookie(w, res.RefreshToken)
 		shared.WriteJSON(w, http.StatusCreated, map[string]any{
 			"ok":              true,
 			"show_onboarding": res.ShowOnboarding,
@@ -90,7 +110,7 @@ func handleLogin(svc *auth.Service) http.HandlerFunc {
 			return
 		}
 
-		token, err := svc.Login(req.Email, req.Password)
+		result, err := svc.Login(req.Email, req.Password)
 		if errors.Is(err, auth.ErrInvalidCredentials) {
 			shared.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid email or password"})
 			return
@@ -100,7 +120,8 @@ func handleLogin(svc *auth.Service) http.HandlerFunc {
 			return
 		}
 
-		setSessionCookie(w, token)
+		setSessionCookie(w, result.AccessToken)
+		setRefreshCookie(w, result.RefreshToken)
 
 		// Dev-only: devwork@mesh.com always triggers the onboarding flow so
 		// the onboarding UI can be iterated on without re-registering each time.
@@ -121,11 +142,41 @@ func handleLogin(svc *auth.Service) http.HandlerFunc {
 // the same access token presented after logout is refused by RequireAuth.
 func handleLogout(svc *auth.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if cookie, err := r.Cookie(sessionCookieName); err == nil {
-			// Best-effort: a malformed/expired token must not block logout.
+		// Prefer the refresh cookie — it survives access-token expiry, so a
+		// logout after 15 min idle still kills the session. Fall back to the
+		// access JWT's jti. Both are best-effort: a malformed token must not
+		// block logout.
+		if cookie, err := r.Cookie(refreshCookieName); err == nil {
+			_ = svc.RevokeSessionByRefresh(cookie.Value)
+		} else if cookie, err := r.Cookie(sessionCookieName); err == nil {
 			_ = svc.RevokeSession(cookie.Value)
 		}
 		clearSessionCookies(w)
+		shared.WriteJSON(w, http.StatusOK, map[string]bool{"ok": true})
+	}
+}
+
+// handleRefresh exchanges a valid refresh token for a fresh access JWT and a
+// rotated refresh token. It is the silent-reauth endpoint the client calls
+// when the access token expires. Both cookies are re-stamped on success; on
+// failure the stale cookies are cleared.
+func handleRefresh(svc *auth.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie(refreshCookieName)
+		if err != nil {
+			shared.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "not authenticated"})
+			return
+		}
+
+		accessToken, refreshToken, err := svc.Refresh(cookie.Value)
+		if err != nil {
+			clearSessionCookies(w)
+			shared.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "session expired, please sign in again"})
+			return
+		}
+
+		setSessionCookie(w, accessToken)
+		setRefreshCookie(w, refreshToken)
 		shared.WriteJSON(w, http.StatusOK, map[string]bool{"ok": true})
 	}
 }
