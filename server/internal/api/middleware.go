@@ -12,6 +12,10 @@ import (
 // successful login or registration.
 const sessionCookieName = "inkbase_session"
 
+// refreshCookieName is the name of the HttpOnly rotating refresh cookie,
+// restricted to the /api/auth path so it is only sent to auth endpoints.
+const refreshCookieName = "inkbase_refresh"
+
 type contextKey string
 
 const userIDKey contextKey = "userID"

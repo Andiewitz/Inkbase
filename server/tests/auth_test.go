@@ -560,6 +560,40 @@ func TestLogoutThenProtectedRouteIsBlocked(t *testing.T) {
 	}
 }
 
+// TestLogoutRevokesSessionServerSide proves logout is no longer a client-side
+// illusion. After logout, the EXACT same access token — still in the cookie —
+// is refused, because the server-side session row was deleted. This is the fix
+// for the previous design where a logged-out JWT stayed valid for 24 h.
+func TestLogoutRevokesSessionServerSide(t *testing.T) {
+	handler := api.New()
+	email := uniqueEmail(t)
+
+	rec := register(t, handler, email, "securepass1", "10.0.0.8:1")
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("register failed: %d", rec.Code)
+	}
+	cookie := sessionCookie(t, rec)
+
+	// Sanity: the fresh session works.
+	rec = doRequest(handler, http.MethodGet, "/api/auth/me", "10.0.0.8:2", nil, cookie)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 before logout, got %d", rec.Code)
+	}
+
+	// Logout while presenting the session cookie.
+	rec = doRequest(handler, http.MethodPost, "/api/auth/logout", "10.0.0.8:3", nil, cookie)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 from logout, got %d", rec.Code)
+	}
+
+	// The identical token must now be dead, even though it was never tampered
+	// with and is not expired.
+	rec = doRequest(handler, http.MethodGet, "/api/auth/me", "10.0.0.8:4", nil, cookie)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("FAIL: revoked session token expected 401, got %d — logout did not revoke server-side", rec.Code)
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Refresh tokens
 // ---------------------------------------------------------------------------

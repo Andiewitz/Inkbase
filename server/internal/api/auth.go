@@ -116,20 +116,37 @@ func handleLogin(svc *auth.Service) http.HandlerFunc {
 	}
 }
 
-// handleLogout clears the session cookie by overwriting it with an expired one.
-// The JWT itself does not need to be invalidated — it simply becomes inaccessible
-// from the browser once the cookie is gone.
-func handleLogout() http.HandlerFunc {
+// handleLogout revokes the server-side session and clears the session cookies.
+// Unlike a pure client-side cookie drop, the revoked session dies immediately:
+// the same access token presented after logout is refused by RequireAuth.
+func handleLogout(svc *auth.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		http.SetCookie(w, &http.Cookie{
-			Name:     sessionCookieName,
-			Value:    "",
-			Path:     "/",
-			HttpOnly: true,
-			MaxAge:   -1,
-		})
+		if cookie, err := r.Cookie(sessionCookieName); err == nil {
+			// Best-effort: a malformed/expired token must not block logout.
+			_ = svc.RevokeSession(cookie.Value)
+		}
+		clearSessionCookies(w)
 		shared.WriteJSON(w, http.StatusOK, map[string]bool{"ok": true})
 	}
+}
+
+// clearSessionCookies overwrites the session and refresh cookies so the
+// browser discards them.
+func clearSessionCookies(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   -1,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     refreshCookieName,
+		Value:    "",
+		Path:     "/api/auth",
+		HttpOnly: true,
+		MaxAge:   -1,
+	})
 }
 
 // handleMe returns the authenticated user's ID. Protected by RequireAuth.
