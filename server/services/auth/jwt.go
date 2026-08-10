@@ -10,7 +10,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-const tokenTTL = 24 * time.Hour
+const (
+	tokenTTL      = 24 * time.Hour
+	tokenIssuer   = "inkbase"
+	tokenAudience = "inkbase-api"
+)
 
 // newTokenID returns a cryptographically random 32-byte hex string used as the
 // token ID (jti). It uniquely identifies a session for revocation and refresh.
@@ -55,6 +59,8 @@ func SignToken(userID int64, tokenID string) (string, error) {
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        tokenID,
+			Issuer:    tokenIssuer,
+			Audience:  jwt.ClaimStrings{tokenAudience},
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(tokenTTL)),
 		},
@@ -85,7 +91,7 @@ func verify(tokenStr string) (int64, string, error) {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 		return secret, nil
-	})
+	}, jwt.WithIssuer(tokenIssuer), jwt.WithAudience(tokenAudience))
 	if err != nil {
 		return 0, "", fmt.Errorf("parse token: %w", err)
 	}

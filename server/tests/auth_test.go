@@ -124,6 +124,34 @@ func tamperedToken(t *testing.T) string {
 		".THIS_IS_NOT_A_VALID_SIGNATURE_xxxxxxxxxxx"
 }
 
+// signClaims signs the given claims with the dev secret, mirroring how the
+// server issues tokens.
+func signClaims(t *testing.T, c testClaims) string {
+	t.Helper()
+	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
+	signed, err := tok.SignedString([]byte(devSecret))
+	if err != nil {
+		t.Fatalf("sign test token: %v", err)
+	}
+	return signed
+}
+
+// futureClaims returns a valid-signature token whose issuer and audience do NOT
+// match the server's expectations. Used to prove iss/aud are enforced even
+// when the signature, expiry, and uid would otherwise be fine.
+func foreignToken(t *testing.T) string {
+	t.Helper()
+	c := testClaims{
+		UserID: 1,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "attacker-app",
+			Audience:  jwt.ClaimStrings{"victim-api"},
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		},
+	}
+	return signClaims(t, c)
+}
+
 // ---------------------------------------------------------------------------
 // Cookie flags: HttpOnly, SameSite, Secure, MaxAge
 // ---------------------------------------------------------------------------
@@ -410,6 +438,23 @@ func TestTamperedTokenRejected(t *testing.T) {
 
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("FAIL: expected 401 for tampered token, got %d", rec.Code)
+	}
+}
+
+// TestForeignIssuerAudienceRejected verifies that a correctly-signed token
+// issued for a different issuer or audience is refused. Even a valid signature
+// is not enough — the token must be scoped to this API.
+func TestForeignIssuerAudienceRejected(t *testing.T) {
+	handler := api.New()
+
+	foreignCookie := &http.Cookie{
+		Name:  "inkbase_session",
+		Value: foreignToken(t),
+	}
+	rec := doRequest(handler, http.MethodGet, "/api/auth/me", "10.0.0.6:2", nil, foreignCookie)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("FAIL: expected 401 for token with foreign iss/aud, got %d", rec.Code)
 	}
 }
 
