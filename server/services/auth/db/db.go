@@ -77,6 +77,20 @@ func migrate(db *sql.DB, env string) error {
 			created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)
 	`, autoInc))
+	if err != nil {
+		return err
+	}
+
+	// Server-side sessions keyed by the JWT's jti. Deleting a row revokes the
+	// session — access and refresh tokens both die with it.
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS sessions (
+			id         TEXT NOT NULL PRIMARY KEY,
+			user_id    BIGINT NOT NULL REFERENCES users(id),
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			expires_at TIMESTAMP NOT NULL
+		)
+	`)
 	return err
 }
 

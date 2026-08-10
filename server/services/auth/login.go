@@ -41,7 +41,12 @@ func (s *Service) Login(email, password string) (token string, err error) {
 		return "", ErrInvalidCredentials
 	}
 
-	token, err = SignToken(userID, newTokenID())
+	tokenID, err := s.createSession(userID)
+	if err != nil {
+		return "", err
+	}
+
+	token, err = SignToken(userID, tokenID)
 	if err != nil {
 		return "", err
 	}

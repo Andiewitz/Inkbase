@@ -72,32 +72,3 @@ func SignToken(userID int64, tokenID string) (string, error) {
 	}
 	return signed, nil
 }
-
-// VerifyToken parses and validates a JWT, returning the embedded user ID.
-func VerifyToken(tokenStr string) (int64, error) {
-	userID, _, err := verify(tokenStr)
-	return userID, err
-}
-
-// verify parses and validates a JWT, returning the embedded user ID and the
-// token ID (jti). Signature, expiry, and signing method are enforced here.
-func verify(tokenStr string) (int64, string, error) {
-	secret, err := jwtSecret()
-	if err != nil {
-		return 0, "", err
-	}
-	t, err := jwt.ParseWithClaims(tokenStr, &claims{}, func(t *jwt.Token) (any, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-		}
-		return secret, nil
-	}, jwt.WithIssuer(tokenIssuer), jwt.WithAudience(tokenAudience))
-	if err != nil {
-		return 0, "", fmt.Errorf("parse token: %w", err)
-	}
-	c, ok := t.Claims.(*claims)
-	if !ok || !t.Valid {
-		return 0, "", fmt.Errorf("invalid token claims")
-	}
-	return c.UserID, c.ID, nil
-}

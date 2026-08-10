@@ -152,6 +152,23 @@ func foreignToken(t *testing.T) string {
 	return signClaims(t, c)
 }
 
+// sessionlessToken returns a correctly-signed token with the right issuer,
+// audience, and expiry, but a jti that has no session row. It passes every
+// cryptographic check yet must be refused by the server-side session store.
+func sessionlessToken(t *testing.T) string {
+	t.Helper()
+	c := testClaims{
+		UserID: 12345,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        "no-such-session",
+			Issuer:    "inkbase",
+			Audience:  jwt.ClaimStrings{"inkbase-api"},
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		},
+	}
+	return signClaims(t, c)
+}
+
 // ---------------------------------------------------------------------------
 // Cookie flags: HttpOnly, SameSite, Secure, MaxAge
 // ---------------------------------------------------------------------------
@@ -366,7 +383,9 @@ func TestProdSecretRequired(t *testing.T) {
 }
 
 // TestProdSigningWorksWithSecret verifies the happy path: with JWT_SECRET set
-// in production, signing and verifying round-trip correctly.
+// in production, signing succeeds. (Full round-trip verification happens
+// through the service in dev tests; a prod round-trip would need a Postgres
+// connection for the session store.)
 func TestProdSigningWorksWithSecret(t *testing.T) {
 	restoreEnv(t, "APP_ENV")
 	restoreEnv(t, "JWT_SECRET")
@@ -377,12 +396,8 @@ func TestProdSigningWorksWithSecret(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sign with prod secret: %v", err)
 	}
-	userID, err := auth.VerifyToken(token)
-	if err != nil {
-		t.Fatalf("verify with prod secret: %v", err)
-	}
-	if userID != 7 {
-		t.Errorf("FAIL: expected user 7, got %d", userID)
+	if token == "" {
+		t.Fatal("FAIL: expected a non-empty token signed with the production secret")
 	}
 }
 
@@ -455,6 +470,23 @@ func TestForeignIssuerAudienceRejected(t *testing.T) {
 
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("FAIL: expected 401 for token with foreign iss/aud, got %d", rec.Code)
+	}
+}
+
+// TestSessionlessTokenRejected verifies the server-side session gate: a token
+// with a valid signature, issuer, and audience is still refused when no
+// matching session row exists (e.g. it was forged, or its session was deleted).
+func TestSessionlessTokenRejected(t *testing.T) {
+	handler := api.New()
+
+	fakeCookie := &http.Cookie{
+		Name:  "inkbase_session",
+		Value: sessionlessToken(t),
+	}
+	rec := doRequest(handler, http.MethodGet, "/api/auth/me", "10.0.0.6:3", nil, fakeCookie)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("FAIL: expected 401 for token with no server-side session, got %d", rec.Code)
 	}
 }
 

@@ -26,7 +26,7 @@ func New() http.Handler {
 	mux.HandleFunc("POST /api/auth/logout", handleLogout())
 
 	// Auth — protected (RequireAuth reads the session cookie)
-	mux.Handle("GET /api/auth/me", RequireAuth(handleMe()))
+	mux.Handle("GET /api/auth/me", RequireAuth(authSvc)(handleMe()))
 
 	// Rate limiter wraps the entire mux — every route is covered.
 	return RateLimit(store)(mux)
