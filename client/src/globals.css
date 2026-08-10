@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@source "../landing-page";
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -8,8 +10,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
 }
 
 body {

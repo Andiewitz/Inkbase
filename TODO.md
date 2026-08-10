@@ -48,3 +48,37 @@ what was finished and which problems were fixed, per developer request.
    what was finished, each problem fixed (root cause → impact → fix →
    verification), timeline, open items, lessons.
 2. **G2 — Update `docs/README.md` contents; append `TODO.md` entry; commit.**
+
+---
+
+## 2026-08-11 — Replace Next.js template with Inkbase landing page
+
+Delete the App Router template (`src/app/`) and serve the real product landing
+page at `/` from the Pages Router. The landing lives in a self-contained
+`client/landing-page/` module (own `lib/`, `components/ui/`, `pages/`) wired in
+via a thin `src/pages/index.tsx` re-export. Hero tailored to the Inkbase
+concept ("PR reviews, but for writing" — warm paper, purple accent, Lobster
+wordmark, bond-paper manuscript preview with inline AI suggestions). Replaces
+all external/Tailus assets with the actual app concept + lucide icons + onboarding
+personas.
+
+### Goalposts
+
+1. **G1 — Router consolidation.** Delete `client/src/app/` (page.tsx, layout.tsx,
+   globals.css). Move globals.css → `client/src/globals.css`, add
+   `@source "../landing-page"` for Tailwind v4 detection, fix template leftover
+   (`--font-geist-*` vars never defined). Rewire `_app.tsx` import to
+   `../globals.css`. Extend `_document.tsx` `<Head>` with favicons + default
+   title/description (previously in layout.tsx metadata). Verify auth/dashboard/
+   demo still render.
+2. **G2 — Landing base kit.** Install `class-variance-authority` +
+   `@radix-ui/react-slot`. Create `landing-page/lib/utils.ts` (cn =
+   clsx + twMerge), `components/ui/button.tsx` (shadcn-style, cva + Slot),
+   `components/animated-group.tsx` (stagger), `components/text-effect.tsx`
+   (rotating word), `components/logo.tsx` (Lobster + Sparkles).
+3. **G3 — Hero.** Create `components/manuscript-preview.tsx` (bond-paper mockup,
+   inline AI suggestions, animated SVG cursor) + `components/hero-section.tsx`
+   (nav, badge, headline, CTAs → /auth/signup + /auth/login, personas row).
+4. **G4 — Wire up.** Create `landing-page/pages/landing.tsx` +
+   `src/pages/index.tsx` (re-export). Full verification: lint, build, curl `/`
+   (landing hero), `/auth/login`, `/dashboard`, `/demo` all 200. Commit.

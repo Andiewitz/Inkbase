@@ -1,6 +1,6 @@
 import { Inter, Lobster_Two } from "next/font/google";
 import type { AppProps } from "next/app";
-import "../app/globals.css";
+import "../globals.css";
 
 const inter = Inter({
   variable: "--font-inter",
