@@ -37,7 +37,7 @@ export function HeroSection() {
       <div className="pointer-events-none absolute -bottom-20 -right-20 h-80 w-80 rounded-full bg-amber-200/40 blur-3xl" />
 
       {/* Nav */}
-      <header className="relative z-10 flex items-center justify-between px-6 py-5 lg:px-10">
+      <header className="relative z-10 flex items-center justify-between px-6 py-5 lg:px-10 font-satoshi">
         <Logo />
         <nav className="hidden items-center gap-8 md:flex">
           {NAV_LINKS.map((link) => (
@@ -64,13 +64,13 @@ export function HeroSection() {
       <AnimatedGroup className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center gap-12 px-6 py-14 lg:flex-row lg:px-10">
         {/* Copy */}
         <div className="flex flex-1 flex-col items-center gap-6 text-center lg:items-start lg:text-left">
-          <div className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-white/80 px-4 py-1.5 text-xs font-semibold text-purple-700 shadow-sm backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-white/80 px-4 py-1.5 text-xs font-medium text-purple-700 shadow-sm backdrop-blur-sm font-satoshi">
             <Sparkles className="h-3.5 w-3.5 fill-purple-200 text-purple-600" />
             PR reviews, but for writing
           </div>
 
-          <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-slate-900 md:text-5xl xl:text-6xl">
-            Line-by-line AI reviews for your{" "}
+          <h1 className="text-4xl font-bold leading-tight tracking-tight text-slate-900 md:text-5xl xl:text-6xl font-satoshi">
+            The better way to write your{" "}
             <span className="relative inline-block text-indigo-700">
               <TextEffect words={["manuscript", "novel", "screenplay", "memoir"]} />
               <svg
