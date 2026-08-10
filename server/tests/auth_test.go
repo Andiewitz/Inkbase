@@ -287,6 +287,29 @@ func TestProtectedRouteRequiresCookie(t *testing.T) {
 	}
 }
 
+// TestUnknownEmailLoginUniformError exercises the login path for an email that
+// does not exist. The service must return the same 401 with the same generic
+// message as a wrong password — the dummy-bcrypt timing equalizer keeps this
+// branch alive, and the response must never hint that the email is unknown.
+func TestUnknownEmailLoginUniformError(t *testing.T) {
+	handler := api.New()
+
+	rec := doRequest(handler, http.MethodPost, "/api/auth/login", "10.9.0.1:1", map[string]string{
+		"email": "does-not-exist@test.inkbase.dev", "password": "somepassword1",
+	})
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("FAIL: unknown email expected 401, got %d", rec.Code)
+	}
+	var body map[string]string
+	if err := json.NewDecoder(rec.Body).Decode(&body); err != nil {
+		t.Fatalf("decode body: %v", err)
+	}
+	if body["error"] != "invalid email or password" {
+		t.Errorf("FAIL: unknown email must return the same generic message as a wrong password, got %q", body["error"])
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Production secret enforcement
 // ---------------------------------------------------------------------------
