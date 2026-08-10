@@ -28,7 +28,7 @@ func (s *Service) Login(email, password string) (token string, err error) {
 		return "", ErrInvalidCredentials
 	}
 
-	token, err = SignToken(userID)
+	token, err = SignToken(userID, newTokenID())
 	if err != nil {
 		return "", err
 	}

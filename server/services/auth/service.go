@@ -12,8 +12,12 @@ type Service struct {
 }
 
 // NewService opens the database (SQLite in dev, Postgres in prod) and returns
-// a ready-to-use auth service.
+// a ready-to-use auth service. It fails fast on a production server that is
+// missing its signing secret rather than booting into a forgeable state.
 func NewService() (*Service, error) {
+	if _, err := jwtSecret(); err != nil {
+		return nil, err
+	}
 	db, err := authdb.Open()
 	if err != nil {
 		return nil, err

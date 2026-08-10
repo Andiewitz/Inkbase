@@ -14,6 +14,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"inkbase/server/internal/api"
+	"inkbase/server/services/auth"
 )
 
 // ---------------------------------------------------------------------------
@@ -284,6 +285,68 @@ func TestProtectedRouteRequiresCookie(t *testing.T) {
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("FAIL: expected 401 without cookie, got %d", rec.Code)
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Production secret enforcement
+// ---------------------------------------------------------------------------
+
+// TestProdSecretRequired verifies that a production server without JWT_SECRET
+// fails fast instead of signing tokens with the public dev fallback. A
+// forgeable token is the single worst outcome this codebase could ship.
+func TestProdSecretRequired(t *testing.T) {
+	restoreEnv(t, "APP_ENV")
+	restoreEnv(t, "JWT_SECRET")
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("JWT_SECRET", "")
+
+	if _, err := auth.SignToken(1, "some-session-id"); err == nil {
+		t.Fatal("FAIL: SignToken must error in production without JWT_SECRET")
+	}
+
+	// NewService must refuse to boot (checked before any DB connection).
+	svc, err := auth.NewService()
+	if err == nil {
+		t.Fatal("FAIL: NewService must fail fast in production without JWT_SECRET")
+	}
+	if svc != nil {
+		t.Fatal("FAIL: NewService must return nil service on config error")
+	}
+}
+
+// TestProdSigningWorksWithSecret verifies the happy path: with JWT_SECRET set
+// in production, signing and verifying round-trip correctly.
+func TestProdSigningWorksWithSecret(t *testing.T) {
+	restoreEnv(t, "APP_ENV")
+	restoreEnv(t, "JWT_SECRET")
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("JWT_SECRET", "a-real-production-secret")
+
+	token, err := auth.SignToken(7, "sess-123")
+	if err != nil {
+		t.Fatalf("sign with prod secret: %v", err)
+	}
+	userID, err := auth.VerifyToken(token)
+	if err != nil {
+		t.Fatalf("verify with prod secret: %v", err)
+	}
+	if userID != 7 {
+		t.Errorf("FAIL: expected user 7, got %d", userID)
+	}
+}
+
+// restoreEnv snapshots an env var and restores it when the test finishes, so
+// production-mode tests never leak into other tests running sequentially.
+func restoreEnv(t *testing.T, key string) {
+	t.Helper()
+	old, had := os.LookupEnv(key)
+	t.Cleanup(func() {
+		if had {
+			os.Setenv(key, old)
+		} else {
+			os.Unsetenv(key)
+		}
+	})
 }
 
 // ---------------------------------------------------------------------------

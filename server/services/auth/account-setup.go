@@ -40,7 +40,7 @@ func (s *Service) Register(email, password string) (*SetupResult, error) {
 		return nil, fmt.Errorf("insert user: %w", err)
 	}
 
-	token, err := SignToken(userID)
+	token, err := SignToken(userID, newTokenID())
 	if err != nil {
 		return nil, err
 	}
