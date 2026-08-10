@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -146,6 +147,10 @@ func TestRateLimitTokenRefill(t *testing.T) {
 // different clients must not share a bucket even when proxied through the same
 // address.
 func TestRateLimitXForwardedFor(t *testing.T) {
+	// Forwarded headers are only honored behind a configured trusted proxy.
+	restoreEnv(t, "TRUST_PROXY")
+	t.Setenv("TRUST_PROXY", "true")
+
 	handler := api.New()
 	const proxyAddr = "127.0.0.1:80" // same proxy for both clients
 
@@ -167,5 +172,39 @@ func TestRateLimitXForwardedFor(t *testing.T) {
 
 	if rec.Code != http.StatusOK {
 		t.Errorf("FAIL: different client behind same proxy expected 200, got %d — rate limiter is not isolating by real IP", rec.Code)
+	}
+}
+
+// TestRateLimitSpoofedXForwardedForIgnored verifies the security fix: when the
+// server is NOT configured to trust proxies, a spoofed X-Forwarded-For header
+// must not let an attacker rotate buckets and bypass the rate limit. Every
+// request keys on the real RemoteAddr regardless of what the header claims.
+func TestRateLimitSpoofedXForwardedForIgnored(t *testing.T) {
+	// Ensure TRUST_PROXY is unset/off for this test.
+	restoreEnv(t, "TRUST_PROXY")
+	t.Setenv("TRUST_PROXY", "")
+
+	handler := api.New()
+	const ip = "5.5.5.6:9000"
+
+	// Exhaust the bucket while claiming a fresh X-Forwarded-For on every hit.
+	for i := 0; i < 11; i++ {
+		req := httptest.NewRequest(http.MethodGet, "/api/health", nil)
+		req.RemoteAddr = ip
+		req.Header.Set("X-Forwarded-For", fmt.Sprintf("203.0.113.%d", i))
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+	}
+
+	// The spoofed headers must NOT have created fresh buckets — this request
+	// keys on RemoteAddr and the bucket is empty.
+	req := httptest.NewRequest(http.MethodGet, "/api/health", nil)
+	req.RemoteAddr = ip
+	req.Header.Set("X-Forwarded-For", "203.0.113.99")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusTooManyRequests {
+		t.Errorf("FAIL: spoofed X-Forwarded-For must not bypass rate limit — expected 429, got %d", rec.Code)
 	}
 }

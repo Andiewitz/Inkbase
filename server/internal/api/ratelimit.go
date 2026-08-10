@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -108,19 +109,23 @@ func RateLimit(store *limiterStore) func(http.Handler) http.Handler {
 	}
 }
 
-// clientIP extracts the real client IP, respecting X-Forwarded-For when the
-// request is proxied through Next.js or NGINX.
+// clientIP extracts the real client IP. Forwarded headers (X-Forwarded-For,
+// X-Real-Ip) are only trusted when TRUST_PROXY is set — i.e. the server is
+// explicitly behind a proxy that overwrites those headers. Without the flag
+// they are ignored, so a spoofed header cannot rotate the rate-limit bucket.
 func clientIP(r *http.Request) string {
-	// X-Forwarded-For may be a comma-separated list; the leftmost entry is the
-	// original client.
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		if i := strings.Index(xff, ","); i != -1 {
-			return strings.TrimSpace(xff[:i])
+	if trustProxyHeaders() {
+		// X-Forwarded-For may be a comma-separated list; the leftmost entry is
+		// the original client.
+		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+			if i := strings.Index(xff, ","); i != -1 {
+				return strings.TrimSpace(xff[:i])
+			}
+			return strings.TrimSpace(xff)
 		}
-		return strings.TrimSpace(xff)
-	}
-	if xri := r.Header.Get("X-Real-Ip"); xri != "" {
-		return strings.TrimSpace(xri)
+		if xri := r.Header.Get("X-Real-Ip"); xri != "" {
+			return strings.TrimSpace(xri)
+		}
 	}
 	// RemoteAddr is "host:port" — strip the port.
 	addr := r.RemoteAddr
@@ -128,4 +133,15 @@ func clientIP(r *http.Request) string {
 		return addr[:i]
 	}
 	return addr
+}
+
+// trustProxyHeaders reports whether forwarded headers may be trusted. Only a
+// proxy you control can overwrite them; an internet-facing server that trusts
+// them lets any client spoof its IP and bypass rate limiting.
+func trustProxyHeaders() bool {
+	switch strings.ToLower(os.Getenv("TRUST_PROXY")) {
+	case "1", "true", "yes", "on":
+		return true
+	}
+	return false
 }

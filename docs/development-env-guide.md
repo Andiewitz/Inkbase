@@ -122,7 +122,16 @@ Set the following environment variables on the server:
 APP_ENV=production
 DATABASE_URL=postgres://user:password@host:5432/inkbase?sslmode=require
 JWT_SECRET=<strong-random-secret>
+TRUST_PROXY=true
 ```
+
+- `JWT_SECRET` is **required** in production. The server refuses to boot without
+  it — a missing secret would otherwise sign tokens with the public dev
+  fallback, letting anyone forge a session.
+- `TRUST_PROXY=true` must only be set when the server sits behind a proxy
+  (NGINX, load balancer) that rewrites `X-Forwarded-For`. Without it, the rate
+  limiter keys on the direct connection address and ignores forwarded headers —
+  a spoofed header cannot bypass it.
 
 No other change is required — the same binary that runs locally will connect
 to PostgreSQL when `APP_ENV=production`.
