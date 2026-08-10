@@ -34,3 +34,17 @@ tokens, and a client-side auto-refresh seam.
    access JWT + rotated refresh token. Replayed old refresh tokens are dead.
 8. **GP8 — Client `apiFetch` wrapper.** 401 → `/api/auth/refresh` → retry once.
    Seam for future authenticated client calls (no authenticated consumer yet).
+
+---
+
+## 2026-08-10 — Post-mortem: auth hardening
+
+Document the auth-hardening session as an incident-style post-mortem covering
+what was finished and which problems were fixed, per developer request.
+
+### Goalposts
+
+1. **G1 — Write `docs/post-mortems/2026-08-10-auth-hardening.md`.** Summary,
+   what was finished, each problem fixed (root cause → impact → fix →
+   verification), timeline, open items, lessons.
+2. **G2 — Update `docs/README.md` contents; append `TODO.md` entry; commit.**
