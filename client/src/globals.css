@@ -27,3 +27,40 @@ input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
   caret-color: #111827 !important;
 }
+
+/* Claymorphism Green Utilities */
+.clay-container-green {
+  background: linear-gradient(160deg, #1c3426 0%, #122218 100%);
+  box-shadow:
+    inset 2px 2px 6px rgba(255, 255, 255, 0.12),
+    inset -4px -4px 10px rgba(0, 0, 0, 0.4),
+    0 25px 50px -12px rgba(5, 15, 10, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.clay-card-green {
+  background: linear-gradient(145deg, #244331 0%, #193023 100%);
+  box-shadow:
+    inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.18),
+    inset -3px -3px 6px rgba(0, 0, 0, 0.35),
+    0 12px 24px -6px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.clay-card-green:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 2px 2px 4px rgba(255, 255, 255, 0.22),
+    inset -3px -3px 6px rgba(0, 0, 0, 0.4),
+    0 16px 32px -8px rgba(0, 0, 0, 0.5);
+}
+
+.clay-pill-green {
+  background: linear-gradient(145deg, #2f543e, #23402e);
+  box-shadow:
+    inset 1px 1px 2px rgba(255, 255, 255, 0.25),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.3),
+    0 4px 10px rgba(0, 0, 0, 0.25);
+}
+

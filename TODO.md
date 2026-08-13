@@ -82,3 +82,16 @@ personas.
 4. **G4 — Wire up.** Create `landing-page/pages/landing.tsx` +
    `src/pages/index.tsx` (re-export). Full verification: lint, build, curl `/`
    (landing hero), `/auth/login`, `/dashboard`, `/demo` all 200. Commit.
+
+---
+
+## 2026-08-13 — Redesign landing page post-hero section (Claymorphic Green)
+
+Redesign the post-hero section (`client/landing-page/components/features-section.tsx`) to match the requested dark clay-green visual style inspired by Lovable.dev layout, featuring high-impact hero typography, full-width responsive clay container, and dual-shadow claymorphic feature cards.
+
+### Goalposts
+
+1. **GP1 — Add Claymorphic Green CSS utilities.** Update `client/src/globals.css` with claymorphism classes (`.clay-container-green`, `.clay-card-green`) utilizing dual soft shadows, top-left highlight borders, and matte green gradients.
+2. **GP2 — Redesign FeaturesSection component.** Overhaul `client/landing-page/components/features-section.tsx` into a high-fidelity dark clay-green feature section with headline *"For writing and beyond"*, subtitle, and 4 structured claymorphic feature cards.
+3. **GP3 — Verification & Commit.** Verify Next.js build, test visual layout across mobile/desktop, and commit changes following git conventions.
+
