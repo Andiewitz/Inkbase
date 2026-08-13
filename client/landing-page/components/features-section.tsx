@@ -1,101 +1,183 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
-interface FeatureCardProps {
-  title: string;
-  badge: string;
-  description: string;
-  children?: React.ReactNode;
-}
-
-function FeatureCard({ title, badge, description, children }: FeatureCardProps) {
-  return (
-    <div className="clay-card-green relative flex min-h-[220px] sm:min-h-[250px] lg:min-h-[270px] flex-col justify-between overflow-hidden rounded-2xl p-6 sm:p-8 lg:p-10">
-      <div>
-        <div className="mb-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium tracking-wide text-emerald-200 clay-pill-green">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          {badge}
-        </div>
-        <h3 className="text-lg font-semibold tracking-tight text-white sm:text-xl lg:text-2xl font-satoshi">
-          {title}
-        </h3>
-        <p className="mt-3 text-xs leading-relaxed text-emerald-100/70 sm:text-sm lg:text-base">
-          {description}
-        </p>
-      </div>
-      {children && <div className="mt-6 font-mono text-xs">{children}</div>}
-    </div>
-  );
-}
+const FEATURES_LIST = [
+  {
+    id: "hosting",
+    title: "Hosting, handled",
+    description:
+      "Inkbase handles hosting, SSL, line-by-line feedback, and backend manuscript infrastructure. Your code and data stay yours. Always.",
+  },
+  {
+    id: "stack",
+    title: "Your manuscript stack, connected",
+    description:
+      "Seamlessly connects your local editor, manuscript repositories, and team review pipelines in one unified workflow.",
+  },
+  {
+    id: "diffs",
+    title: "Version control, diffed & tracked",
+    description:
+      "Review suggested manuscript changes with visual inline diffs. Accept or reject edits with single-click precision.",
+  },
+  {
+    id: "security",
+    title: "Safe and secure, as standard",
+    description:
+      "End-to-end encrypted storage ensures your manuscripts and proprietary ideas are never shared or used to train public AI.",
+  },
+  {
+    id: "everywhere",
+    title: "Works wherever, whenever",
+    description:
+      "Available across desktop, web, and offline environments — keeping your writing momentum active anywhere.",
+  },
+];
 
 export function FeaturesSection() {
+  const [activeFeature, setActiveFeature] = useState("hosting");
+
+  const currentFeature =
+    FEATURES_LIST.find((f) => f.id === activeFeature) || FEATURES_LIST[0];
+
   return (
     <section className="relative z-10 mx-auto w-full max-w-[99vw] px-2 sm:px-3 lg:px-4 -mt-24 sm:-mt-32 md:-mt-36 lg:-mt-40 pb-20">
-      <div className="clay-container-green relative flex min-h-[650px] sm:min-h-[750px] lg:min-h-[850px] flex-col justify-between overflow-hidden rounded-[2rem] sm:rounded-[3rem] px-6 sm:px-12 lg:px-16 py-14 sm:py-20 lg:py-24 text-emerald-50">
-        {/* Ambient subtle glow inside container */}
-        <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-20 h-96 w-96 rounded-full bg-teal-500/10 blur-3xl" />
+      <div className="clay-container-gray relative overflow-hidden rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-12 lg:p-16 text-slate-100">
+        {/* Subtle ambient gradient highlights */}
+        <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-pink-500/5 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-purple-500/5 blur-3xl" />
 
-        {/* Top Header & Content Block */}
-        <div>
-          {/* Section Header */}
-          <div className="max-w-2xl">
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl font-satoshi leading-tight">
-              For writing and beyond
-            </h2>
-            <p className="mt-3.5 text-sm sm:text-base lg:text-lg leading-relaxed text-emerald-100/70 font-normal">
-              Inkbase runs on enterprise-grade manuscript analysis — so you can create full-stack books that scale.
-            </p>
+        {/* 2-Column Main Layout Grid */}
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-14 lg:items-center">
+          {/* Left Column: Headline & Vertical Feature Tabs */}
+          <div className="lg:col-span-5 flex flex-col justify-between space-y-10">
+            {/* Header */}
+            <div>
+              <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl font-satoshi leading-[1.12]">
+                For writing and beyond
+              </h2>
+              <p className="mt-4 text-sm sm:text-base leading-relaxed text-slate-400 font-normal max-w-lg">
+                Inkbase runs on enterprise-grade infrastructure – so you can create full-stack stories and books that scale.
+              </p>
+            </div>
+
+            {/* Vertical Interactive Feature List */}
+            <div className="space-y-4 pt-2">
+              {FEATURES_LIST.map((feature) => {
+                const isActive = feature.id === activeFeature;
+                return (
+                  <div
+                    key={feature.id}
+                    onClick={() => setActiveFeature(feature.id)}
+                    className="group cursor-pointer pt-3"
+                  >
+                    <h3
+                      className={`text-base sm:text-lg font-semibold tracking-tight transition-colors ${
+                        isActive ? "text-white font-bold" : "text-slate-400 group-hover:text-slate-200"
+                      }`}
+                    >
+                      {feature.title}
+                    </h3>
+
+                    {isActive && (
+                      <div className="mt-2.5">
+                        {/* Pink / Purple Accent Line */}
+                        <div className="h-0.5 w-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-full" />
+                        <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-400">
+                          {feature.description}
+                        </p>
+                      </div>
+                    )}
+
+                    {!isActive && (
+                      <div className="mt-4 border-b border-white/10" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Main Feature Highlight */}
-          <div className="mt-10 sm:mt-12 rounded-2xl sm:rounded-3xl clay-card-green p-7 sm:p-10 lg:p-12">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-              <div className="max-w-xl">
-                <div className="mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-emerald-200 clay-pill-green">
-                  Core Engine
+          {/* Right Column: Interactive Browser Preview Card */}
+          <div className="lg:col-span-7">
+            <div className="clay-card-gray relative overflow-hidden rounded-[2.5rem] p-6 sm:p-8 flex flex-col justify-between min-h-[460px] sm:min-h-[540px]">
+              {/* Outer Window Container with Neon Gradient Border */}
+              <div className="relative rounded-2xl border border-pink-500/30 bg-[#121215]/90 p-5 sm:p-7 shadow-[0_0_50px_rgba(236,72,153,0.12)]">
+                {/* Browser Header Bar */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-3 w-3 rounded-full bg-red-500/80 inline-block" />
+                    <span className="h-3 w-3 rounded-full bg-amber-500/80 inline-block" />
+                    <span className="h-3 w-3 rounded-full bg-emerald-500/80 inline-block" />
+                  </div>
+                  {/* Address Pill */}
+                  <div className="flex items-center gap-2 rounded-full bg-white/5 px-4 py-1 text-xs font-mono text-slate-400 border border-white/10">
+                    <svg className="h-3 w-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span>orbit.inkbase.app</span>
+                  </div>
+                  <div className="w-8" />
                 </div>
-                <h3 className="text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl font-satoshi">
-                  Hosting, handled
-                </h3>
-                <p className="mt-3 text-xs leading-relaxed text-emerald-100/75 sm:text-sm lg:text-base">
-                  Inkbase handles hosting, SSL, and manuscript infrastructure. Your code and story data stay yours. Always.
-                </p>
+
+                {/* Central Canvas Diagram */}
+                <div className="relative my-10 flex items-center justify-center py-8">
+                  {/* Dashed Trajectory Line Background */}
+                  <svg className="absolute inset-0 h-full w-full stroke-slate-600/40 pointer-events-none" fill="none">
+                    <path d="M 50 100 Q 200 20 400 100 T 750 100" strokeDasharray="6 6" strokeWidth="1.5" />
+                  </svg>
+
+                  {/* Connected Nodes */}
+                  <div className="relative z-10 flex items-center justify-around w-full max-w-lg">
+                    {/* Node 1: Lock */}
+                    <div className="clay-node-gray flex h-11 w-11 sm:h-13 sm:w-13 items-center justify-center rounded-full text-slate-300">
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+
+                    {/* Node 2: Git / Branch */}
+                    <div className="clay-node-gray flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full text-slate-300">
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7v8a2 2 0 002 2h6M8 7a2 2 0 100-4 2 2 0 000 4zm0 8a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100-4 2 2 0 000 4z" />
+                      </svg>
+                    </div>
+
+                    {/* Center Node: Inkbase Cloud/AI Node with Glowing Halo */}
+                    <div className="clay-node-gray relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full text-white border border-pink-500/40 shadow-[0_0_30px_rgba(236,72,153,0.3)]">
+                      <svg className="h-8 w-8 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 15a4 4 0 004 4h9a5 5 0 001-9.9M7 15a5 5 0 019.9-1M7 15H6.5" />
+                      </svg>
+                    </div>
+
+                    {/* Node 4: Key / Security */}
+                    <div className="clay-node-gray flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full text-slate-300">
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                      </svg>
+                    </div>
+
+                    {/* Node 5: Database */}
+                    <div className="clay-node-gray flex h-11 w-11 sm:h-13 sm:w-13 items-center justify-center rounded-full text-slate-300">
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="w-full lg:w-96 rounded-xl bg-[#132319]/90 p-5 border border-emerald-500/20 shadow-inner shrink-0">
-                <div className="flex items-center justify-between text-xs text-emerald-300/70 mb-3">
-                  <span className="font-mono text-emerald-300">Chapter 04 • Diff view</span>
-                  <span className="rounded bg-emerald-950/80 px-2 py-0.5 text-[10px] text-emerald-400 font-mono border border-emerald-500/30">PASS</span>
-                </div>
-                <div className="space-y-2 text-xs sm:text-sm font-sans">
-                  <div className="line-through text-red-300/60 bg-red-950/30 p-2 rounded">The shadow moved across the room quickly.</div>
-                  <div className="text-emerald-200 bg-emerald-950/50 p-2 rounded border-l-2 border-emerald-400 font-medium">The shadow crept across the floorboards.</div>
-                </div>
+
+              {/* Bottom Integration Logos Row */}
+              <div className="mt-8 flex items-center justify-around border-t border-white/10 pt-6 opacity-40 grayscale hover:opacity-70 transition-opacity">
+                <span className="text-xs font-mono tracking-wider font-semibold text-slate-400">MARKDOWN</span>
+                <span className="text-xs font-mono tracking-wider font-semibold text-slate-400">EPUB 3.0</span>
+                <span className="text-xs font-mono tracking-wider font-semibold text-slate-400">PDF RENDER</span>
+                <span className="text-xs font-mono tracking-wider font-semibold text-slate-400">GIT DIFF</span>
+                <span className="text-xs font-mono tracking-wider font-semibold text-slate-400">VS CODE</span>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Secondary Feature Grid */}
-        <div className="mt-8 sm:mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <FeatureCard
-            badge="Consistency"
-            title="World-building, synced"
-            description="Tracks character names, plot timelines, and location details automatically across 100k+ words."
-          />
-
-          <FeatureCard
-            badge="Version Control"
-            title="Visual PR Diffs"
-            description="Review suggested edits line-by-line with visual diffs. Accept or reject changes with one click."
-          />
-
-          <FeatureCard
-            badge="Privacy"
-            title="Manuscript Security"
-            description="End-to-end encrypted storage. Your creative work is never used to train public LLM models."
-          />
         </div>
       </div>
     </section>
