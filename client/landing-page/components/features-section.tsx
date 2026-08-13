@@ -35,23 +35,31 @@ const FEATURES_LIST = [
   },
 ];
 
+const INTEGRATIONS = [
+  { name: "VS Code", tag: "Plugin" },
+  { name: "GitHub", tag: "Sync" },
+  { name: "Obsidian", tag: "Vault" },
+  { name: "EPUB 3.0", tag: "Export" },
+  { name: "PDF Engine", tag: "Typeset" },
+  { name: "Notion", tag: "Outline" },
+  { name: "Scrivener", tag: "Import" },
+  { name: "Markdown", tag: "Native" },
+];
+
 export function FeaturesSection() {
   const [activeFeature, setActiveFeature] = useState("hosting");
 
-  const currentFeature =
-    FEATURES_LIST.find((f) => f.id === activeFeature) || FEATURES_LIST[0];
-
   return (
-    <section className="relative z-10 mx-auto w-full max-w-[99vw] px-2 sm:px-3 lg:px-4 -mt-24 sm:-mt-32 md:-mt-36 lg:-mt-40 pb-20">
-      <div className="clay-container-gray relative overflow-hidden rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-12 lg:p-16 text-slate-100">
+    <section className="relative z-10 mx-auto w-full max-w-[99vw] px-2 sm:px-3 lg:px-4 -mt-24 sm:-mt-32 md:-mt-36 lg:-mt-40 pb-24">
+      <div className="clay-container-gray relative overflow-hidden rounded-[2.5rem] sm:rounded-[3.5rem] p-6 sm:p-12 lg:p-16 text-slate-100 min-h-[1100px]">
         {/* Subtle ambient gradient highlights */}
-        <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-pink-500/5 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-purple-500/5 blur-3xl" />
+        <div className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full bg-pink-500/5 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-32 -left-32 h-[500px] w-[500px] rounded-full bg-purple-500/5 blur-3xl" />
 
-        {/* 2-Column Main Layout Grid */}
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-14 lg:items-center">
-          {/* Left Column: Headline & Vertical Feature Tabs */}
-          <div className="lg:col-span-5 flex flex-col justify-between space-y-10">
+        {/* 2-Column Layout Grid */}
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-14 items-start">
+          {/* Left Column: Headline & Sticky Vertical Feature Tabs */}
+          <div className="lg:col-span-5 flex flex-col justify-between space-y-10 lg:sticky lg:top-28">
             {/* Header */}
             <div>
               <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl font-satoshi leading-[1.12]">
@@ -99,10 +107,10 @@ export function FeaturesSection() {
             </div>
           </div>
 
-          {/* Right Column: Interactive Browser Preview Card */}
-          <div className="lg:col-span-7">
-            <div className="clay-card-gray relative overflow-hidden rounded-[2.5rem] p-6 sm:p-8 flex flex-col justify-between min-h-[460px] sm:min-h-[540px]">
-              {/* Outer Window Container with Neon Gradient Border */}
+          {/* Right Column: Stacked Vertical Feature Cards */}
+          <div className="lg:col-span-7 space-y-8">
+            {/* Card 1: Browser Preview Diagram (Hosting, handled) */}
+            <div className="clay-card-gray relative overflow-hidden rounded-[2.5rem] p-6 sm:p-8 flex flex-col justify-between min-h-[460px] sm:min-h-[520px]">
               <div className="relative rounded-2xl border border-pink-500/30 bg-[#121215]/90 p-5 sm:p-7 shadow-[0_0_50px_rgba(236,72,153,0.12)]">
                 {/* Browser Header Bar */}
                 <div className="flex items-center justify-between border-b border-white/10 pb-4">
@@ -122,7 +130,7 @@ export function FeaturesSection() {
                 </div>
 
                 {/* Central Canvas Diagram */}
-                <div className="relative my-10 flex items-center justify-center py-8">
+                <div className="relative my-8 flex items-center justify-center py-8">
                   {/* Dashed Trajectory Line Background */}
                   <svg className="absolute inset-0 h-full w-full stroke-slate-600/40 pointer-events-none" fill="none">
                     <path d="M 50 100 Q 200 20 400 100 T 750 100" strokeDasharray="6 6" strokeWidth="1.5" />
@@ -144,14 +152,14 @@ export function FeaturesSection() {
                       </svg>
                     </div>
 
-                    {/* Center Node: Inkbase Cloud/AI Node with Glowing Halo */}
+                    {/* Center Node: Inkbase Cloud/AI Node */}
                     <div className="clay-node-gray relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full text-white border border-pink-500/40 shadow-[0_0_30px_rgba(236,72,153,0.3)]">
                       <svg className="h-8 w-8 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 15a4 4 0 004 4h9a5 5 0 001-9.9M7 15a5 5 0 019.9-1M7 15H6.5" />
                       </svg>
                     </div>
 
-                    {/* Node 4: Key / Security */}
+                    {/* Node 4: Key */}
                     <div className="clay-node-gray flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full text-slate-300">
                       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
@@ -168,13 +176,61 @@ export function FeaturesSection() {
                 </div>
               </div>
 
-              {/* Bottom Integration Logos Row */}
-              <div className="mt-8 flex items-center justify-around border-t border-white/10 pt-6 opacity-40 grayscale hover:opacity-70 transition-opacity">
-                <span className="text-xs font-mono tracking-wider font-semibold text-slate-400">MARKDOWN</span>
-                <span className="text-xs font-mono tracking-wider font-semibold text-slate-400">EPUB 3.0</span>
-                <span className="text-xs font-mono tracking-wider font-semibold text-slate-400">PDF RENDER</span>
-                <span className="text-xs font-mono tracking-wider font-semibold text-slate-400">GIT DIFF</span>
-                <span className="text-xs font-mono tracking-wider font-semibold text-slate-400">VS CODE</span>
+              {/* Integration Row Inside Preview Card */}
+              <div className="mt-6 flex items-center justify-around border-t border-white/10 pt-5 opacity-50 font-mono text-xs">
+                <span>MARKDOWN</span>
+                <span>EPUB 3.0</span>
+                <span>PDF RENDER</span>
+                <span>GIT DIFF</span>
+              </div>
+            </div>
+
+            {/* Card 2: Connected Ecosystem Card (Your manuscript stack, connected) */}
+            <div className="clay-card-gray relative overflow-hidden rounded-[2.5rem] p-6 sm:p-8 space-y-6">
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div>
+                  <h4 className="text-lg font-bold text-white font-satoshi">Ecosystem & Integrations</h4>
+                  <p className="text-xs text-slate-400">Connects natively with your favorite editing tools</p>
+                </div>
+                <div className="flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400 font-mono border border-emerald-500/20">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>100% Synced</span>
+                </div>
+              </div>
+
+              {/* Grid of Tool Badges */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {INTEGRATIONS.map((tool) => (
+                  <div key={tool.name} className="clay-node-gray flex items-center justify-between rounded-xl p-3 border border-white/5">
+                    <span className="text-xs font-semibold text-slate-200">{tool.name}</span>
+                    <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-slate-400 font-mono">{tool.tag}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Card 3: Version Control & Visual PR Diffs */}
+            <div className="clay-card-gray relative overflow-hidden rounded-[2.5rem] p-6 sm:p-8 space-y-5">
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div>
+                  <h4 className="text-lg font-bold text-white font-satoshi">Visual PR Diffs & History</h4>
+                  <p className="text-xs text-slate-400">Line-by-line acceptance and rollback</p>
+                </div>
+                <span className="rounded bg-indigo-500/20 px-2.5 py-1 text-xs text-indigo-300 font-mono border border-indigo-500/30">v2.4.0</span>
+              </div>
+
+              {/* Simulated Diff Block */}
+              <div className="rounded-xl bg-[#121215]/90 p-4 border border-white/10 font-mono text-xs space-y-2">
+                <div className="flex items-center justify-between text-slate-400 text-[11px] pb-1 border-b border-white/5">
+                  <span>chapter_04_revised.md</span>
+                  <span className="text-emerald-400">+2 lines, -1 line</span>
+                </div>
+                <div className="line-through text-red-400/70 bg-red-950/30 p-2 rounded">
+                  - The shadow moved across the room quickly and vanished.
+                </div>
+                <div className="text-emerald-300 bg-emerald-950/40 p-2 rounded border-l-2 border-emerald-400">
+                  + The shadow crept silently across the floorboards before vanishing into the night.
+                </div>
               </div>
             </div>
           </div>
