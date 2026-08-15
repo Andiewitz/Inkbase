@@ -382,11 +382,18 @@ export default function DashboardPage() {
 
   useLayoutEffect(() => {
     setIsMounted(true);
-    const seen = localStorage.getItem("inkbase_onboarding_seen");
-    if (!seen) {
+    // Only launch Bonjour -> Onboarding if explicitly arriving from new registration
+    const shouldShow =
+      router.query.onboarding === "true" ||
+      (typeof window !== "undefined" &&
+        sessionStorage.getItem("inkbase_show_onboarding") === "true");
+
+    if (shouldShow) {
       setScreen("bonjour");
+    } else {
+      setScreen("dashboard");
     }
-  }, []);
+  }, [router.query.onboarding]);
 
   useEffect(() => {
     loadDocuments();
@@ -453,6 +460,17 @@ export default function DashboardPage() {
     }
   };
 
+  const handleCloseOnboarding = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("inkbase_onboarding_seen", "true");
+      sessionStorage.removeItem("inkbase_show_onboarding");
+    }
+    if (router.query.onboarding) {
+      router.replace("/dashboard", undefined, { shallow: true });
+    }
+    setScreen("dashboard");
+  };
+
   if (!isMounted) return null;
 
   return (
@@ -486,7 +504,7 @@ export default function DashboardPage() {
         <Bonjour onFinished={() => setScreen("onboarding")} />
       )}
       {screen === "onboarding" && (
-        <OnboardingOverlay onClose={() => setScreen("dashboard")} />
+        <OnboardingOverlay onClose={handleCloseOnboarding} />
       )}
     </div>
   );

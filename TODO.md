@@ -185,4 +185,17 @@ Propagate the Studio Cyan/Teal design system (`#E3EDF6` ambient ground, `#F5FAFC
 3. **GP3 — Login & Signup Forms**. Restyle `login-form.tsx` and `signup-form.tsx` to match studio canvas, cyan quick-actions, and teal submit states.
 4. **GP4 — Build Verification & Commit**. Verify full `next build` passes and commit.
 
+---
+
+## 2026-08-16 — Fix Onboarding/Bonjour Triggering on Login (Register-Only Isolation)
+
+Isolate the Bonjour and Onboarding experience strictly to new user registration (`/auth/signup`). Remove devwork override from backend `handleLogin` and eliminate unsolicited onboarding popups on `/dashboard` during normal logins.
+
+### Goalposts
+1. **GP1 — Backend handleLogin clean up**. Remove `showOnboarding` devwork override from `server/internal/api/auth.go`.
+2. **GP2 — Frontend Login Form clean up**. Update `login-form.tsx` to always redirect directly to `/dashboard`.
+3. **GP3 — Dashboard registration-only trigger**. Update `dashboard.tsx` to only launch Bonjour/Onboarding when explicitly arriving from registration.
+4. **GP4 — Build & Test Verification**. Run tests, verify build, and commit.
+
+
 
