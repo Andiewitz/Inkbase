@@ -18,6 +18,7 @@ import Logo from "../assets/logo.svg";
 import { FREE_TIER_MAX } from "../components/documents/data";
 import { DocumentCard } from "../components/documents/document-card";
 import { NewDocumentCard } from "../components/documents/new-document-card";
+import { RecentSpotlight } from "../components/documents/recent-spotlight";
 import type { DocumentItem } from "../components/documents/types";
 import { Bonjour } from "../components/ui/bonjour";
 import { OnboardingOverlay } from "../components/ui/onboarding";
@@ -278,7 +279,7 @@ function DashboardMain({
           </div>
         </header>
 
-        <div className="max-w-6xl mx-auto py-6 px-8 space-y-6">
+        <div className="max-w-6xl mx-auto py-6 px-8 space-y-7">
           {/* Error Alert banner */}
           {error && (
             <div className="flex items-center gap-2.5 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
@@ -287,11 +288,21 @@ function DashboardMain({
             </div>
           )}
 
-          {/* Recent documents */}
+          {/* Top Hero: Most Recent Writing Spotlight */}
+          {!loading && !searchQuery && documents.length > 0 && (
+            <RecentSpotlight
+              doc={documents[0]}
+              onOpen={() => setActiveId(documents[0].id)}
+              onExport={onExport}
+              onDelete={onDelete}
+            />
+          )}
+
+          {/* All Manuscripts / Projects Grid */}
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-gray-800">
-                Recent documents
+                {searchQuery ? "Search Results" : "All Manuscripts"}
               </h3>
 
               <div className="flex items-center gap-3 text-xs text-gray-500">
@@ -305,6 +316,11 @@ function DashboardMain({
             {loading ? (
               <div className="flex h-64 items-center justify-center">
                 <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+              </div>
+            ) : filteredDocs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-10 text-center bg-white rounded-xl border border-gray-200 shadow-2xs">
+                <p className="text-sm font-medium text-gray-700">No matching manuscripts found</p>
+                <p className="text-xs text-gray-400 mt-1">Try searching for a different title or keyword</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">

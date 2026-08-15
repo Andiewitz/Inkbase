@@ -122,3 +122,16 @@ Redesign the document card UI component so that the preview is styled as the cri
 2. **GP2 — Redesign `NewDocumentCard`.** Update `client/src/components/documents/new-document-card.tsx` to mirror the sharp paper sheet action area and soft bottom section.
 3. **GP3 — Verification & Commit.** Verify live frontend rendering and commit with git conventions.
 
+---
+
+## 2026-08-16 — Top Recent Writing Spotlight with playful remark
+
+Add a top spotlight section featuring the user's most recent manuscript alongside a playful editorial remark card ("Ready to jump back in, chief?"), quick stats, and a "Resume Writing" CTA, keeping the general projects/manuscripts grid cleanly below.
+
+### Goalposts
+
+1. **GP1 — Create `RecentSpotlight`.** Create `client/src/components/documents/recent-spotlight.tsx` with sharp paper preview, playful remark header, branch status, and primary action.
+2. **GP2 — Integrate in `dashboard.tsx`.** Update `client/src/pages/dashboard.tsx` to display `RecentSpotlight` above the main manuscripts grid.
+3. **GP3 — Verification & Commit.** Verify live frontend rendering and commit with git conventions.
+
+
