@@ -43,8 +43,39 @@ export function RecentSpotlight({
 
   return (
     <div className="relative overflow-visible rounded-2xl border border-gray-200 bg-gradient-to-br from-white via-gray-50/50 to-blue-50/20 p-6 shadow-xs">
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6">
-        {/* Left Column: Playful Remark & CTAs */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-7">
+        {/* Left Column: Physical Paper Sheet Snapshot (Sharp Edges) */}
+        <div
+          onClick={onOpen}
+          className="w-full lg:w-64 shrink-0 cursor-pointer group"
+        >
+          <div className="relative aspect-[3/4] w-full rounded-none border border-gray-200/90 bg-white p-4.5 shadow-[0_2px_8px_rgba(0,0,0,0.05)] group-hover:shadow-[0_8px_20px_rgba(0,0,0,0.09)] group-hover:border-blue-300 transition-all flex flex-col justify-between overflow-hidden">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2 pb-1 border-b border-gray-100">
+                <div className="h-2 w-2/5 bg-gray-800/80 rounded-none" />
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-none bg-blue-50 text-blue-700 tracking-wider uppercase border border-blue-100">
+                  {formatUpper}
+                </span>
+              </div>
+
+              <div className="space-y-1 pt-0.5">
+                <div className="h-1.5 w-full bg-gray-200/80 rounded-none" />
+                <div className="h-1.5 w-4/5 bg-gray-200/60 rounded-none" />
+              </div>
+
+              <div className="pt-2 text-[10px] leading-relaxed text-gray-600 line-clamp-5 select-none font-serif">
+                {doc.excerpt || "Start typing your manuscript..."}
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-between border-t border-gray-100 text-[9px] text-gray-400 font-sans">
+              <span className="font-medium">{wordCount.toLocaleString()} words</span>
+              <span className="text-blue-600 font-semibold group-hover:underline">Click to edit →</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Playful Remark & CTAs */}
         <div className="flex-1 space-y-4 max-w-xl">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
@@ -138,37 +169,6 @@ export function RecentSpotlight({
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Physical Paper Sheet Snapshot (Sharp Edges) */}
-        <div
-          onClick={onOpen}
-          className="w-full lg:w-72 shrink-0 cursor-pointer group"
-        >
-          <div className="relative aspect-[4/3] lg:aspect-[3/4] w-full rounded-none border border-gray-200/90 bg-white p-4.5 shadow-[0_2px_8px_rgba(0,0,0,0.05)] group-hover:shadow-[0_8px_20px_rgba(0,0,0,0.09)] group-hover:border-blue-300 transition-all flex flex-col justify-between overflow-hidden">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2 pb-1 border-b border-gray-100">
-                <div className="h-2 w-2/5 bg-gray-800/80 rounded-none" />
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-none bg-blue-50 text-blue-700 tracking-wider uppercase border border-blue-100">
-                  {formatUpper}
-                </span>
-              </div>
-
-              <div className="space-y-1 pt-0.5">
-                <div className="h-1.5 w-full bg-gray-200/80 rounded-none" />
-                <div className="h-1.5 w-4/5 bg-gray-200/60 rounded-none" />
-              </div>
-
-              <div className="pt-2 text-[10px] leading-relaxed text-gray-600 line-clamp-4 lg:line-clamp-6 select-none font-serif">
-                {doc.excerpt || "Start typing your manuscript..."}
-              </div>
-            </div>
-
-            <div className="pt-2 flex items-center justify-between border-t border-gray-100 text-[9px] text-gray-400 font-sans">
-              <span className="font-medium">{wordCount.toLocaleString()} words</span>
-              <span className="text-blue-600 font-semibold group-hover:underline">Click to edit →</span>
             </div>
           </div>
         </div>
