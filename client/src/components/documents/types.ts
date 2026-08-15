@@ -1,14 +1,31 @@
 export interface BranchInfo {
   name: string;
-  isEdit: boolean;
-  pendingChanges: number;
+  is_edit?: boolean;
+  isEdit?: boolean;
+  pending_changes?: number;
+  pendingChanges?: number;
 }
+
+export type SupportedFormat =
+  | "docx"
+  | "pdf"
+  | "txt"
+  | "md"
+  | "epub"
+  | "rtf"
+  | "odt";
 
 export interface DocumentItem {
   id: string;
+  user_id?: number;
   title: string;
+  content?: string;
   excerpt: string;
-  lastEdited: string;
-  wordCount: number;
+  word_count?: number;
+  wordCount?: number;
+  format?: SupportedFormat | string;
   branch: BranchInfo;
+  created_at?: string;
+  updated_at?: string;
+  lastEdited?: string;
 }

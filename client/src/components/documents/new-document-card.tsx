@@ -1,23 +1,54 @@
+import React, { useRef } from "react";
 import { motion } from "framer-motion";
+import { SUPPORTED_EXTENSIONS } from "./data";
 
 export function NewDocumentCard({
   title,
   subtitle,
   icon,
   onClick,
+  onImportFile,
   disabled,
 }: {
   title: string;
   subtitle?: string;
   icon?: React.ReactNode;
-  onClick: () => void;
+  onClick?: () => void;
+  onImportFile?: (file: File) => void;
   disabled?: boolean;
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleClick = () => {
+    if (disabled) return;
+    if (onImportFile && fileInputRef.current) {
+      fileInputRef.current.value = "";
+      fileInputRef.current.click();
+    } else if (onClick) {
+      onClick();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onImportFile) {
+      onImportFile(file);
+    }
+  };
+
   return (
     <div className="flex h-full flex-col items-center">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={SUPPORTED_EXTENSIONS}
+        onChange={handleFileChange}
+        className="hidden"
+        aria-hidden="true"
+      />
       <motion.button
         type="button"
-        onClick={onClick}
+        onClick={handleClick}
         disabled={disabled}
         whileHover={disabled ? {} : { y: -2 }}
         whileTap={disabled ? {} : { scale: 0.98 }}

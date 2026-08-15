@@ -95,3 +95,18 @@ Redesign the post-hero section (`client/landing-page/components/features-section
 2. **GP2 — Redesign FeaturesSection component.** Overhaul `client/landing-page/components/features-section.tsx` into a high-fidelity dark clay-green feature section with headline *"For writing and beyond"*, subtitle, and 4 structured claymorphic feature cards.
 3. **GP3 — Verification & Commit.** Verify Next.js build, test visual layout across mobile/desktop, and commit changes following git conventions.
 
+---
+
+## 2026-08-16 — DynamoDB documents service & multi-format support
+
+Delete dummy mock data and implement a fully-featured documents service with DynamoDB persistence (production) and local in-memory store (dev/testing), full multi-format parsing, editing, and export capabilities for `.docx`, `.pdf`, `.txt`, `.md`, `.epub`, `.rtf`, and `.odt`, and live dashboard API integration.
+
+### Goalposts
+
+1. **GP1 — Document Domain Models & Storage (`server/services/documents/`).** Create `models.go`, `db.go` (DynamoDB client + in-memory store for tests/dev), `service.go`.
+2. **GP2 — Format Parsing & Manipulation Engine (`server/services/documents/`).** Implement `parse.go` and `export.go` for `.docx`, `.pdf`, `.epub`, `.odt`, `.rtf`, `.md`, and `.txt`.
+3. **GP3 — Document CRUD Operations (`server/services/documents/`).** Implement `create.go`, `get.go`, `list.go`, `update.go`, `delete.go` with free-tier limit enforcement.
+4. **GP4 — HTTP API Endpoints & Route Wiring (`server/internal/api/documents.go`).** Implement thin HTTP handlers, wire routes to `server.go`, and add comprehensive automated test suite (`tests/documents_test.go`).
+5. **GP5 — Client Integration & Dummy Data Cleanup.** Remove mock `DOCUMENTS` data in `client/src/components/documents/data.ts`, wire `client/src/pages/dashboard.tsx` to `/api/documents` (fetch, import file, delete, free-tier limit tracking).
+6. **GP6 — End-to-End Verification & Walkthrough.** Run full test suite across server and client, verify format roundtrip and API endpoints.
+
