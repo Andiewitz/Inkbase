@@ -5,13 +5,20 @@ import { useRouter } from "next/router";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Bars3BottomLeftIcon,
-  Bars3Icon,
-  DocumentIcon,
-  DocumentTextIcon,
-  TrashIcon,
-} from "@heroicons/react/24/outline";
-import { GitBranchIcon, PlusIcon, Loader2, AlertCircle } from "lucide-react";
+  Menu,
+  PanelLeftClose,
+  BookOpen,
+  GitBranch,
+  Trash2,
+  GitBranchIcon,
+  PlusIcon,
+  Loader2,
+  AlertCircle,
+  Circle,
+  FileText,
+  Search,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
 import Logo from "../assets/logo.svg";
@@ -82,8 +89,13 @@ function Sidebar({
         )}
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-gray-900">Inkbase</p>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+            <p
+              className="truncate text-base font-normal text-slate-900 leading-tight"
+              style={{ fontFamily: "var(--font-lobster), cursive" }}
+            >
+              Inkbase
+            </p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
               {workspace.name}
             </p>
           </div>
@@ -96,9 +108,9 @@ function Sidebar({
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-50 hover:text-gray-600"
         >
           {collapsed ? (
-            <Bars3Icon className="h-4 w-4" />
+            <Menu className="h-4 w-4" />
           ) : (
-            <Bars3BottomLeftIcon className="h-4 w-4" />
+            <PanelLeftClose className="h-4 w-4" />
           )}
         </button>
       </div>
@@ -106,9 +118,9 @@ function Sidebar({
       {/* Navigation */}
       <nav className="mt-4 space-y-1">
         {[
-          { label: "Recent Documents", icon: DocumentTextIcon, active: true },
-          { label: "Branch Reviews", icon: GitBranchIcon, active: false },
-          { label: "Trash", icon: TrashIcon, active: false },
+          { label: "Recent Documents", icon: BookOpen, active: true },
+          { label: "Branch Reviews", icon: GitBranch, active: false },
+          { label: "Trash", icon: Trash2, active: false },
         ].map((item) => (
           <button
             key={item.label}
@@ -149,11 +161,11 @@ function Sidebar({
                 "flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition",
                 collapsed && "justify-center px-2",
                 activeId === doc.id
-                  ? "bg-gray-100 font-semibold text-gray-900"
-                  : "text-gray-600 hover:bg-gray-50",
+                  ? "bg-slate-100 font-semibold text-slate-900"
+                  : "text-slate-600 hover:bg-slate-50",
               )}
             >
-              <DocumentIcon className="h-4 w-4 shrink-0 text-blue-500" />
+              <FileText className="h-4 w-4 shrink-0 text-blue-500" />
               {!collapsed && <span className="truncate text-left">{doc.title}</span>}
             </button>
           ))}
@@ -235,7 +247,7 @@ function DashboardMain({
   );
 
   return (
-    <div className="flex flex-1 overflow-hidden bg-gray-100/60">
+    <div className="flex flex-1 overflow-hidden bg-ink-bg">
       <Sidebar
         workspace={MOCK_WORKSPACE}
         documents={documents}
@@ -247,35 +259,29 @@ function DashboardMain({
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-8 py-3">
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200/80 bg-white/90 backdrop-blur-md px-8 py-3">
           {/* Search Input Bar */}
-          <div className="flex items-center gap-3 w-full max-w-xl rounded-full bg-gray-100 px-4 py-2 text-sm text-gray-700 focus-within:bg-white focus-within:shadow-md focus-within:ring-1 focus-within:ring-gray-300 transition">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-gray-400 shrink-0">
-              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+          <div className="flex items-center gap-3 w-full max-w-xl rounded-full bg-slate-100/90 px-4 py-2 text-sm text-slate-700 focus-within:bg-white focus-within:shadow-sm focus-within:ring-1 focus-within:ring-slate-300 transition">
+            <Search className="h-4 w-4 text-slate-400 shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search manuscripts and review branches"
-              className="w-full bg-transparent outline-none placeholder-gray-400 text-sm"
+              className="w-full bg-transparent outline-none placeholder-slate-400 text-sm"
             />
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              type="button"
+            <Button
               onClick={onCreateBlank}
               disabled={atLimit}
-              className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-                atLimit
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 text-white hover:bg-blue-700 shadow-xs"
-              }`}
+              size="default"
+              className="rounded-full cursor-pointer"
             >
               <PlusIcon className="h-3.5 w-3.5" />
               <span>New Manuscript</span>
-            </button>
+            </Button>
           </div>
         </header>
 

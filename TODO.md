@@ -134,4 +134,24 @@ Add a top spotlight section featuring the user's most recent manuscript alongsid
 2. **GP2 — Integrate in `dashboard.tsx`.** Update `client/src/pages/dashboard.tsx` to display `RecentSpotlight` above the main manuscripts grid.
 3. **GP3 — Verification & Commit.** Verify live frontend rendering and commit with git conventions.
 
+---
 
+## 2026-08-16 — Design tokens + shadcn/ui migration
+
+Lock down Inkbase design token system and migrate to shadcn/ui component primitives. Replace @heroicons/react with lucide-react throughout. Apply blue-tinted background token system inspired by the reference design (subtle #EEF3F8 ground, pure white card surfaces, barely-perceptible blue gradients).
+
+### Design Tokens Locked
+- Logo font: Lobster Two — immutable
+- Paper surfaces: always `rounded-none` — physical paper rule
+- App background: `--ink-bg: #EEF3F8` (soft blue-tinted, not white)
+- Card surfaces: `--ink-surface: #FFFFFF` floating on bg
+- Subtle gradient tint: `from-white to-sky-50/50` on info cards
+- Shadows: soft, airy, not dramatic
+
+### Goalposts
+
+1. **GP1 — Update `globals.css` design tokens.** Add `--ink-bg`, `--ink-surface`, `--ink-surface-subtle` CSS vars and `@theme inline` mappings.
+2. **GP2 — Scaffold shadcn/ui components.** Install radix-ui primitives, create `button.tsx`, `dropdown-menu.tsx`, `tooltip.tsx`, `separator.tsx` in `components/ui/` (Tailwind v4 compatible, no CLI).
+3. **GP3 — Remove @heroicons/react.** Patch all imports in dashboard + document components to `lucide-react`.
+4. **GP4 — Wire shadcn into cards.** Replace inline button classes and DIY dropdown menus in `document-card.tsx` and `recent-spotlight.tsx` with shadcn `Button` + `DropdownMenu`.
+5. **GP5 — Apply bg token, build + commit.** Apply `bg-ink-bg` to dashboard root, verify `npm run build`, commit.

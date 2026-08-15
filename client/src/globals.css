@@ -2,22 +2,127 @@
 
 @source "../landing-page";
 
+/* ─── Inkbase Design Tokens ──────────────────────────────────────────────────
+   Rules:
+   - Logo font: Lobster Two — never change
+   - Paper: always rounded-none — physical paper rule
+   - App bg: soft blue-tinted ground (#EEF3F8), never pure white
+   - Card surface: pure white (#FFFFFF) floating on bg
+   - Gradients: barely perceptible sky-blue tint on card surfaces
+   - Shadows: soft, airy — never dramatic
+   ─────────────────────────────────────────────────────────────────────────── */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Background ground — soft blue-tinted, not white */
+  --ink-bg: #EEF3F8;
+  --ink-bg-subtle: #E8EFF6;
+
+  /* Card/panel surfaces — pure white lifting off the ground */
+  --ink-surface: #FFFFFF;
+  --ink-surface-subtle: #F7FAFE;
+  --ink-surface-hover: #F0F6FF;
+
+  /* Sidebar */
+  --ink-sidebar: #F2F7FC;
+  --ink-sidebar-border: rgba(203, 218, 235, 0.7);
+
+  /* Paper (manuscripts) — warm true white, always sharp-edged */
+  --ink-paper: #FEFEFE;
+  --ink-paper-border: rgba(200, 210, 220, 0.8);
+
+  /* Brand */
+  --ink-brand: #2563EB;
+  --ink-brand-hover: #1D4ED8;
+
+  /* Text */
+  --ink-text: #0F172A;
+  --ink-text-muted: #64748B;
+  --ink-text-faint: #94A3B8;
+
+  /* Borders */
+  --ink-border: rgba(203, 218, 235, 0.8);
+  --ink-border-strong: rgba(148, 175, 203, 0.6);
+
+  /* Shadows — airy, not dramatic */
+  --ink-shadow-xs: 0 1px 3px rgba(120, 150, 190, 0.08);
+  --ink-shadow-sm: 0 2px 8px rgba(100, 130, 180, 0.10);
+  --ink-shadow-md: 0 6px 20px rgba(80, 110, 170, 0.10);
+  --ink-shadow-paper: 0 1px 4px rgba(100, 130, 170, 0.08), 0 0 0 1px var(--ink-paper-border);
+
+  /* shadcn/ui required CSS vars (mapped from Inkbase tokens) */
+  --background: 214 33% 95%;           /* #EEF3F8 in HSL */
+  --foreground: 222 47% 6%;            /* #0F172A */
+  --card: 0 0% 100%;                   /* white */
+  --card-foreground: 222 47% 6%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 6%;
+  --primary: 221 83% 53%;              /* #2563EB */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 214 32% 91%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 214 32% 94%;
+  --muted-foreground: 215 20% 40%;
+  --accent: 214 32% 91%;
+  --accent-foreground: 222 47% 11%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 30% 87%;
+  --input: 214 30% 87%;
+  --ring: 221 83% 53%;
+  --radius: 0.75rem;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Map Inkbase tokens to Tailwind utilities */
+  --color-ink-bg: var(--ink-bg);
+  --color-ink-bg-subtle: var(--ink-bg-subtle);
+  --color-ink-surface: var(--ink-surface);
+  --color-ink-surface-subtle: var(--ink-surface-subtle);
+  --color-ink-surface-hover: var(--ink-surface-hover);
+  --color-ink-sidebar: var(--ink-sidebar);
+  --color-ink-paper: var(--ink-paper);
+  --color-ink-brand: var(--ink-brand);
+  --color-ink-text: var(--ink-text);
+  --color-ink-text-muted: var(--ink-text-muted);
+  --color-ink-text-faint: var(--ink-text-faint);
+  --color-ink-border: var(--ink-border);
+
+  /* shadcn/ui Tailwind v4 mappings */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
-  --font-satoshi: "Satoshi", var(--font-inter), system-ui, sans-serif;
+  --font-serif: "Georgia", "Times New Roman", serif;
+  --font-lobster: "Lobster Two", cursive;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--ink-bg);
+  color: var(--ink-text);
   font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 input:-webkit-autofill,
