@@ -296,14 +296,25 @@ function StudioDashboardMain({
           </div>
         </div>
 
+        {error && (
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-red-50/90 border border-red-200 text-xs text-red-700">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+              <span>{error}</span>
+            </div>
+            <button
+              type="button"
+              onClick={onCreateBlank}
+              className="font-bold underline hover:text-red-900 cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {loading ? (
           <div className="flex h-56 items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-[#2C7E86]" />
-          </div>
-        ) : filteredDocs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-12 text-center bg-white rounded-3xl border border-slate-200/80 shadow-2xs">
-            <p className="text-sm font-bold text-slate-700">No matching manuscripts</p>
-            <p className="text-xs text-slate-400 mt-1">Try a different search keyword or create a new manuscript</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
@@ -396,8 +407,17 @@ export default function DashboardPage() {
   }, [router.query.onboarding]);
 
   useEffect(() => {
-    loadDocuments();
-    loadUser();
+    // Run sequentially to avoid concurrent cookie rotation collisions
+    let active = true;
+    (async () => {
+      await loadUser();
+      if (active) {
+        await loadDocuments();
+      }
+    })();
+    return () => {
+      active = false;
+    };
   }, [loadDocuments, loadUser]);
 
   const handleCreateBlank = async () => {

@@ -197,5 +197,19 @@ Isolate the Bonjour and Onboarding experience strictly to new user registration 
 3. **GP3 — Dashboard registration-only trigger**. Update `dashboard.tsx` to only launch Bonjour/Onboarding when explicitly arriving from registration.
 4. **GP4 — Build & Test Verification**. Run tests, verify build, and commit.
 
+---
+
+## 2026-08-16 — Fix Token Refresh Race Condition & Add Post-Mortem #8-16-2026
+
+Resolve the concurrent token refresh collision in `client/src/lib/api.ts` that caused initial dashboard requests to invalidate sessions, add dev seed manuscript persistence in `MemoryStore`, harden the dashboard empty state, and document the post-mortem in `docs/post-mortems/2026-08-16-token-refresh-race-condition.md`.
+
+### Goalposts
+1. **GP1 — Deduplicate Token Refresh in `apiFetch`**. Add single-flight promise locking to `client/src/lib/api.ts`.
+2. **GP2 — Dashboard Grid & Empty State Resiliency**. Keep `NewDocumentCard` persistent and add retry feedback in `dashboard.tsx`.
+3. **GP3 — Memory Store Dev Seed Manuscripts**. Seed initial manuscripts in `server/services/documents/db.go` so local dev restarts retain workspace data.
+4. **GP4 — Post-Mortem Documentation**. Write `docs/post-mortems/2026-08-16-token-refresh-race-condition.md` and link in docs README.
+5. **GP5 — Verification & Commit**. Verify full Go test suite and Next.js build, then commit.
+
+
 
 
