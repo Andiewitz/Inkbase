@@ -10,6 +10,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import type { DocumentItem } from "./types";
+import { PaperPreview } from "./paper-preview";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -33,7 +34,6 @@ export function RecentSpotlight({
   const readingTime = Math.max(1, Math.ceil(wordCount / 200));
   const isEdit = doc.branch?.isEdit || doc.branch?.is_edit || false;
   const pendingChanges = doc.branch?.pendingChanges ?? doc.branch?.pending_changes ?? 0;
-  const formatUpper = (doc.format || "TXT").toUpperCase();
 
   const formattedDate =
     doc.lastEdited ||
@@ -48,37 +48,12 @@ export function RecentSpotlight({
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/90 bg-gradient-to-br from-[#E0F4F7] via-[#D3F0F5] to-[#C5EBF2] p-6 shadow-[0_4px_20px_rgba(100,160,180,0.14)]">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6">
-        {/* Left Column: Physical Paper Sheet Snapshot (Sharp Edges - Physical Paper Rule) */}
+        {/* Left Column: 1:1 Miniature Paper Sheet Snapshot */}
         <div
           onClick={onOpen}
           className="w-full sm:w-56 shrink-0 cursor-pointer group"
         >
-          <div className="relative aspect-[3/4] w-full rounded-none border border-slate-200/90 bg-white p-4 shadow-[0_2px_8px_rgba(80,120,150,0.08)] group-hover:shadow-[0_8px_24px_rgba(60,110,140,0.16)] group-hover:border-teal-400 transition-all flex flex-col justify-between overflow-hidden">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2 pb-1 border-b border-slate-100">
-                <div className="h-2 w-2/5 bg-slate-800 rounded-none" />
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-none bg-teal-50 text-teal-700 tracking-wider uppercase border border-teal-100">
-                  {formatUpper}
-                </span>
-              </div>
-
-              <div className="space-y-1 pt-0.5">
-                <div className="h-1.5 w-full bg-slate-200 rounded-none" />
-                <div className="h-1.5 w-4/5 bg-slate-200/70 rounded-none" />
-              </div>
-
-              <div className="pt-1.5 text-[10px] leading-relaxed text-slate-600 line-clamp-5 select-none font-serif">
-                {doc.excerpt || "Start typing your manuscript..."}
-              </div>
-            </div>
-
-            <div className="pt-2 flex items-center justify-between border-t border-slate-100 text-[9px] text-slate-400 font-sans">
-              <span className="font-medium">{wordCount.toLocaleString()} words</span>
-              <span className="text-teal-700 font-bold group-hover:underline">
-                Open →
-              </span>
-            </div>
-          </div>
+          <PaperPreview doc={doc} />
         </div>
 
         {/* Right Column: Playful Remark & CTAs */}
