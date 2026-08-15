@@ -77,13 +77,13 @@ export function Bonjour({ onFinished }: BonjourProps) {
       {mounted && (
         <motion.div
           key="bonjour-screen"
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-white"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#E3EDF6]"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6, ease: "easeInOut" }}
         >
           <motion.h1
-            className="flex select-none text-[clamp(4rem,12vw,9rem)] font-bold tracking-tight text-gray-900"
+            className="flex select-none text-[clamp(4rem,12vw,9rem)] font-bold tracking-tight text-slate-900"
             style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}
             variants={containerVariants}
             initial="hidden"

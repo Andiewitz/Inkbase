@@ -80,16 +80,16 @@ export default function AuthHero() {
   }
 
   return (
-    <div className="relative flex h-screen max-h-screen w-full flex-col justify-between overflow-hidden bg-[#FBF8F3] px-6 py-6 xl:px-10 xl:py-8 select-none">
+    <div className="relative flex h-screen max-h-screen w-full flex-col justify-between overflow-hidden bg-gradient-to-br from-[#E2EDF6] via-[#D9EEF3] to-[#CCEBF1] px-6 py-6 xl:px-10 xl:py-8 select-none border-r border-[#C8E4ED]">
       {/* Ambient background blur */}
-      <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-purple-200/40 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-20 -right-20 h-72 w-72 rounded-full bg-amber-200/40 blur-3xl" />
+      <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-[#BFE8EF]/50 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 -right-20 h-72 w-72 rounded-full bg-[#D4F2F7]/50 blur-3xl" />
 
       {/* Header / Logo */}
       <div className="relative z-10 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <h1
-            className="text-3xl xl:text-4xl font-bold tracking-tight text-slate-900"
+            className="text-3xl xl:text-4xl font-normal tracking-tight text-slate-850"
             style={{ fontFamily: "var(--font-lobster), cursive" }}
           >
             Inkbase
@@ -98,12 +98,12 @@ export default function AuthHero() {
             animate={{ rotate: [0, 15, -10, 0], scale: [1, 1.15, 1] }}
             transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
           >
-            <Sparkles className="h-5 w-5 text-purple-600 fill-purple-200" />
+            <Sparkles className="h-5 w-5 text-[#2C7E86] fill-[#E5F5F8]" />
           </motion.div>
         </div>
 
-        <div className="hidden xl:flex items-center gap-1.5 rounded-full border border-purple-200/80 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur-sm">
-          <Heart className="h-3.5 w-3.5 fill-purple-500 text-purple-500 animate-pulse" />
+        <div className="hidden xl:flex items-center gap-1.5 rounded-full border border-white/90 bg-white/80 px-3.5 py-1 text-xs font-semibold text-slate-700 shadow-xs backdrop-blur-sm">
+          <Heart className="h-3.5 w-3.5 fill-rose-500 text-rose-500 animate-pulse" />
           <span>Loved by writers who ship.</span>
         </div>
       </div>
@@ -113,13 +113,13 @@ export default function AuthHero() {
         {/* Left Column: Copy & Value Proposition */}
         <div className="flex flex-col justify-center xl:col-span-5 space-y-4">
           <div className="space-y-1.5">
-            <h2 className="text-2xl lg:text-3xl xl:text-[2.2rem] font-extrabold leading-tight text-slate-900 tracking-tight">
+            <h2 className="text-2xl lg:text-3xl xl:text-[2.2rem] font-extrabold leading-tight text-slate-850 tracking-tight font-serif">
               PR reviews, <br />
               but for{" "}
-              <span className="relative inline-block text-purple-700">
+              <span className="relative inline-block text-[#2C7E86]">
                 writing.
                 <svg
-                  className="absolute -bottom-1 left-0 w-full text-purple-400 opacity-80"
+                  className="absolute -bottom-1 left-0 w-full text-teal-400 opacity-80"
                   height="6"
                   viewBox="0 0 100 12"
                   preserveAspectRatio="none"
@@ -137,7 +137,7 @@ export default function AuthHero() {
             <p className="text-xs xl:text-sm text-slate-600 leading-relaxed font-normal">
               Inkbase reviews your manuscript line by line—suggesting edits,
               checking consistency, and helping you ship your{" "}
-              <strong className="font-semibold text-purple-900">
+              <strong className="font-semibold text-teal-900">
                 best story
               </strong>
               .
@@ -228,12 +228,12 @@ export default function AuthHero() {
           </div>
         </div>
 
-        {/* Right Column: Standard US Letter / Bond Paper Mockup */}
+        {/* Right Column: Standard US Letter / Bond Paper Mockup (Strictly Sharp Paper) */}
         <div className="relative flex items-center justify-center xl:col-span-7">
-          <div className="relative w-full max-w-[320px] sm:max-w-[360px] xl:max-w-[390px] aspect-[8.5/11] rounded-lg border border-amber-200/80 bg-[#FFFDF9] p-6 xl:p-7 shadow-2xl shadow-slate-900/10 flex flex-col justify-between overflow-hidden">
+          <div className="relative w-full max-w-[320px] sm:max-w-[360px] xl:max-w-[390px] aspect-[8.5/11] rounded-none border border-slate-200/90 bg-white p-6 xl:p-7 shadow-[0_20px_50px_-15px_rgba(50,90,120,0.18)] flex flex-col justify-between overflow-hidden">
             {/* Header */}
             <div>
-              <div className="flex items-center justify-between border-b border-amber-100/80 pb-3 mb-4">
+              <div className="flex items-center justify-between border-b border-slate-200/80 pb-3 mb-4">
                 <div>
                   <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">
                     CHAPTER 12
@@ -259,7 +259,7 @@ export default function AuthHero() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="bg-purple-100 text-purple-950 px-1.5 py-0.5 rounded font-sans text-xs font-medium border-b-2 border-purple-400 inline-flex items-center gap-1"
+                        className="bg-[#E5F5F8] text-teal-950 px-1.5 py-0.5 rounded-none font-sans text-xs font-medium border-b-2 border-[#2C7E86] inline-flex items-center gap-1"
                       >
                         <span>faces blank as stone.</span>
                       </motion.mark>
@@ -268,7 +268,7 @@ export default function AuthHero() {
                         key="line1-new"
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-emerald-100 text-emerald-950 px-1.5 py-0.5 rounded font-sans text-xs font-semibold border-b-2 border-emerald-400 inline-flex items-center gap-1 shadow-sm"
+                        className="bg-emerald-100 text-emerald-950 px-1.5 py-0.5 rounded-none font-sans text-xs font-semibold border-b-2 border-emerald-500 inline-flex items-center gap-1 shadow-xs"
                       >
                         <Check className="h-3 w-3 text-emerald-600" />
                         <span>features carved like cold granite.</span>
@@ -286,7 +286,7 @@ export default function AuthHero() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="bg-amber-100 text-amber-950 px-1.5 py-0.5 rounded font-sans text-xs font-medium border-b-2 border-amber-400"
+                        className="bg-amber-100 text-amber-950 px-1.5 py-0.5 rounded-none font-sans text-xs font-medium border-b-2 border-amber-400"
                       >
                         Elira hesitated.
                       </motion.mark>
@@ -295,7 +295,7 @@ export default function AuthHero() {
                         key="line2-new"
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-emerald-100 text-emerald-950 px-1.5 py-0.5 rounded font-sans text-xs font-semibold border-b-2 border-emerald-400 inline-flex items-center gap-1 shadow-sm"
+                        className="bg-emerald-100 text-emerald-950 px-1.5 py-0.5 rounded-none font-sans text-xs font-semibold border-b-2 border-emerald-500 inline-flex items-center gap-1 shadow-xs"
                       >
                         <Check className="h-3 w-3 text-emerald-600" />
                         <span>Elira paused, steadying her breath.</span>
@@ -312,15 +312,15 @@ export default function AuthHero() {
 
               {/* Skeleton lines */}
               <div className="mt-6 space-y-2">
-                <div className="h-1.5 w-11/12 rounded-full bg-slate-100" />
-                <div className="h-1.5 w-4/5 rounded-full bg-slate-100" />
-                <div className="h-1.5 w-full rounded-full bg-slate-100" />
-                <div className="h-1.5 w-2/3 rounded-full bg-slate-100" />
+                <div className="h-1.5 w-11/12 rounded-none bg-slate-100" />
+                <div className="h-1.5 w-4/5 rounded-none bg-slate-100" />
+                <div className="h-1.5 w-full rounded-none bg-slate-100" />
+                <div className="h-1.5 w-2/3 rounded-none bg-slate-100" />
               </div>
             </div>
 
             {/* Footer */}
-            <div className="pt-4 border-t border-amber-100/60 flex items-center justify-between text-[10px] font-mono text-slate-400">
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-[10px] font-mono text-slate-400">
               <span>MANUSCRIPT_DRAFT_V3</span>
               <span>WORD COUNT: 42,190</span>
             </div>
@@ -332,14 +332,14 @@ export default function AuthHero() {
                   initial={{ opacity: 0, y: -8, scale: 0.92 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.92 }}
-                  className="absolute top-[75px] left-[30px] z-30 w-[260px] rounded-xl border border-purple-200 bg-white p-3 shadow-xl shadow-purple-900/10"
+                  className="absolute top-[75px] left-[30px] z-30 w-[260px] rounded-2xl border border-white/90 bg-white p-3 shadow-xl shadow-slate-900/10"
                 >
                   <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#2C7E86]">
                       <Wand2 className="h-3.5 w-3.5" />
                       <span>AI Clarity Review</span>
                     </div>
-                    <span className="text-[9px] bg-purple-50 text-purple-600 font-semibold px-1.5 py-0.5 rounded">
+                    <span className="text-[9px] bg-[#E5F5F8] text-[#2C7E86] font-semibold px-1.5 py-0.5 rounded-full">
                       High Confidence
                     </span>
                   </div>
@@ -364,10 +364,10 @@ export default function AuthHero() {
                       )}
                       <button
                         type="button"
-                        className={`flex items-center gap-1 rounded-md px-3.5 py-1 text-xs font-bold text-white transition-all shadow-sm ${
+                        className={`flex items-center gap-1 rounded-xl px-3.5 py-1 text-xs font-bold text-white transition-all shadow-sm ${
                           isClicking && step === 2
-                            ? "bg-purple-800 scale-90 ring-2 ring-purple-400"
-                            : "bg-purple-600 hover:bg-purple-700"
+                            ? "bg-teal-900 scale-90 ring-2 ring-teal-400"
+                            : "bg-[#2C7E86] hover:bg-[#22676E]"
                         }`}
                       >
                         <Check className="h-3.5 w-3.5" />
@@ -386,14 +386,14 @@ export default function AuthHero() {
                   initial={{ opacity: 0, y: -8, scale: 0.92 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.92 }}
-                  className="absolute top-[170px] left-[25px] z-30 w-[260px] rounded-xl border border-amber-200 bg-white p-3 shadow-xl shadow-amber-900/10"
+                  className="absolute top-[170px] left-[25px] z-30 w-[260px] rounded-2xl border border-white/90 bg-white p-3 shadow-xl shadow-slate-900/10"
                 >
                   <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700">
                       <Wand2 className="h-3.5 w-3.5" />
                       <span>Pacing Suggestion</span>
                     </div>
-                    <span className="text-[9px] bg-amber-50 text-amber-700 font-semibold px-1.5 py-0.5 rounded">
+                    <span className="text-[9px] bg-amber-50 text-amber-700 font-semibold px-1.5 py-0.5 rounded-full">
                       Enhance Tension
                     </span>
                   </div>
@@ -402,7 +402,7 @@ export default function AuthHero() {
                     Make reaction active &amp; vivid:
                   </p>
 
-                  <div className="mt-1.5 rounded bg-amber-50 p-1.5 text-[11px] font-medium text-amber-950 border border-amber-100">
+                  <div className="mt-1.5 rounded-xl bg-amber-50 p-1.5 text-[11px] font-medium text-amber-950 border border-amber-100">
                     &quot;Elira paused, steadying her breath.&quot;
                   </div>
 
@@ -418,7 +418,7 @@ export default function AuthHero() {
                       )}
                       <button
                         type="button"
-                        className={`flex items-center gap-1 rounded-md px-3.5 py-1 text-xs font-bold text-white transition-all shadow-sm ${
+                        className={`flex items-center gap-1 rounded-xl px-3.5 py-1 text-xs font-bold text-white transition-all shadow-sm ${
                           isClicking && step === 6
                             ? "bg-amber-800 scale-90 ring-2 ring-amber-400"
                             : "bg-amber-600 hover:bg-amber-700"
@@ -448,12 +448,12 @@ export default function AuthHero() {
               >
                 <path
                   d="M5.65376 12.3673H5.46026L5.31717 12.4976L0.500002 16.8829L0.500002 1.17157L17.2132 12.3673H5.65376Z"
-                  fill="#7C3AED"
+                  fill="#2C7E86"
                   stroke="#FFFFFF"
                   strokeWidth="1.5"
                 />
               </svg>
-              <div className="ml-3 -mt-1 rounded-full bg-purple-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-sm">
+              <div className="ml-3 -mt-1 rounded-full bg-[#2C7E86] px-1.5 py-0.5 text-[9px] font-bold text-white shadow-sm">
                 AI Editor
               </div>
             </motion.div>
@@ -465,13 +465,13 @@ export default function AuthHero() {
       <div className="relative z-10 shrink-0 pt-2 flex items-center justify-between">
         <div>
           <p
-            className="text-base font-bold text-slate-700 leading-tight"
+            className="text-base font-normal text-slate-700 leading-tight"
             style={{ fontFamily: "var(--font-lobster), cursive" }}
           >
             Less guesswork. More great writing.
           </p>
           <svg
-            className="w-32 text-purple-400 opacity-90 mt-0.5"
+            className="w-32 text-teal-400 opacity-90 mt-0.5"
             height="6"
             viewBox="0 0 140 12"
             fill="none"
@@ -485,8 +485,8 @@ export default function AuthHero() {
           </svg>
         </div>
 
-        <div className="xl:hidden flex items-center gap-1.5 rounded-full border border-purple-200/80 bg-white/80 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-sm backdrop-blur-sm">
-          <Heart className="h-3 w-3 fill-purple-500 text-purple-500 animate-pulse" />
+        <div className="xl:hidden flex items-center gap-1.5 rounded-full border border-white/90 bg-white/80 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-sm backdrop-blur-sm">
+          <Heart className="h-3 w-3 fill-rose-500 text-rose-500 animate-pulse" />
           <span>Loved by writers who ship.</span>
         </div>
       </div>

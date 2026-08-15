@@ -173,3 +173,16 @@ Strip away extra analytics fluff (stat cards, greeting card, status donut chart,
 2. **GP2 — Remove unused widget files**. Clean up unused widget components.
 3. **GP3 — Verify & Commit**. Test `next build` and commit.
 
+---
+
+## 2026-08-16 — Apply Studio Design System across Auth & Onboarding
+
+Propagate the Studio Cyan/Teal design system (`#E3EDF6` ambient ground, `#F5FAFC` studio shells, `#2C7E86` primary interactive accents, soft cyan pills, and sharp-paper previews) to the Onboarding overlay and Auth pages (Login, Signup, and AuthHero). Landing page remains untouched.
+
+### Goalposts
+1. **GP1 — Onboarding & Bonjour**. Refactor `onboarding.tsx` and `bonjour.tsx` with studio teal/cyan tokens and rounded-3xl floating studio modal.
+2. **GP2 — Auth Hero**. Restyle `auth-hero.tsx` interactive animated manuscript with studio cyan gradient and sharp-paper preview.
+3. **GP3 — Login & Signup Forms**. Restyle `login-form.tsx` and `signup-form.tsx` to match studio canvas, cyan quick-actions, and teal submit states.
+4. **GP4 — Build Verification & Commit**. Verify full `next build` passes and commit.
+
+

@@ -100,26 +100,26 @@ export function OnboardingOverlay({ onClose }: OnboardingProps) {
   const stepId = STEPS[step - 1].id;
   const copy   = COPY[stepId];
 
-  // Compact pill/chip button — consistent height across all grid steps
+  // Compact pill/chip button matching Studio Cyan aesthetic
   const chipClass = (active: boolean) =>
-    `flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-[13px] font-medium transition-all duration-150 ${
+    `flex items-center gap-2.5 rounded-2xl border px-3.5 py-2.5 text-left text-[13px] font-medium transition-all duration-150 cursor-pointer ${
       active
-        ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-500"
-        : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50/80"
+        ? "border-[#2C7E86] bg-[#E5F5F8] text-[#2C7E86] shadow-xs"
+        : "border-slate-200/80 bg-white text-slate-700 hover:border-[#A2D9E2] hover:bg-[#EAF6F8]"
     }`;
 
   return (
     <motion.div
       key="backdrop"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-md"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
     >
-      {/* Card — fixed width + fixed height so nothing ever scrolls */}
+      {/* Studio Canvas Floating Modal Card */}
       <motion.div
-        className="w-[620px] rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 flex flex-col"
+        className="w-[640px] rounded-[32px] bg-[#F6FBFC] border border-white/90 shadow-[0_24px_70px_-15px_rgba(50,95,140,0.25)] flex flex-col overflow-hidden"
         style={{ height: 560 }}
         initial={{ opacity: 0, y: 20, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -129,11 +129,11 @@ export function OnboardingOverlay({ onClose }: OnboardingProps) {
         {/* ── Top bar ── */}
         <div className="flex items-center justify-between px-8 pt-6 pb-0 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 shrink-0">
-              <PenLine className="h-4 w-4 text-white" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-2xs border border-white shrink-0 text-[#2C7E86]">
+              <PenLine className="h-4 w-4" />
             </div>
             <span
-              className="text-lg font-bold text-gray-900"
+              className="text-lg font-normal text-slate-850"
               style={{ fontFamily: "var(--font-lobster), cursive" }}
             >
               Inkbase
@@ -142,7 +142,7 @@ export function OnboardingOverlay({ onClose }: OnboardingProps) {
           <button
             type="button"
             onClick={onClose}
-            className="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-xs font-semibold text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
           >
             Skip setup
           </button>
@@ -160,30 +160,30 @@ export function OnboardingOverlay({ onClose }: OnboardingProps) {
                   <div className="flex flex-col items-center gap-1 shrink-0">
                     <motion.div
                       animate={{
-                        backgroundColor: isDone || isCurrent ? "#4f46e5" : "#e5e7eb",
+                        backgroundColor: isDone || isCurrent ? "#2C7E86" : "#E2EEF2",
                         scale: isCurrent ? 1.1 : 1,
                       }}
                       transition={{ duration: 0.2 }}
-                      className="h-6 w-6 rounded-full flex items-center justify-center"
+                      className="h-6 w-6 rounded-full flex items-center justify-center shadow-2xs"
                     >
                       {isDone ? (
                         <Check className="h-3 w-3 text-white" />
                       ) : (
-                        <span className={`text-[11px] font-bold ${isCurrent ? "text-white" : "text-gray-400"}`}>
+                        <span className={`text-[11px] font-bold ${isCurrent ? "text-white" : "text-slate-400"}`}>
                           {num}
                         </span>
                       )}
                     </motion.div>
-                    <span className={`text-[10px] font-medium ${isCurrent ? "text-indigo-600" : isDone ? "text-indigo-400" : "text-gray-400"}`}>
+                    <span className={`text-[10px] font-semibold ${isCurrent ? "text-[#2C7E86]" : isDone ? "text-teal-700" : "text-slate-400"}`}>
                       {s.label}
                     </span>
                   </div>
                   {i < STEPS.length - 1 && (
-                    <div className="flex-1 mx-2 h-[2px] rounded-full bg-gray-100 overflow-hidden mb-4 shrink-0">
+                    <div className="flex-1 mx-2 h-[2px] rounded-full bg-[#E2EEF2] overflow-hidden mb-4 shrink-0">
                       <motion.div
                         animate={{ width: isDone ? "100%" : "0%" }}
                         transition={{ duration: 0.35, ease: "easeInOut" }}
-                        className="h-full bg-indigo-400 rounded-full"
+                        className="h-full bg-[#2C7E86] rounded-full"
                       />
                     </div>
                   )}
@@ -194,7 +194,7 @@ export function OnboardingOverlay({ onClose }: OnboardingProps) {
         </div>
 
         {/* ── Divider ── */}
-        <div className="mx-8 mt-4 mb-0 border-t border-gray-100 shrink-0" />
+        <div className="mx-8 mt-4 mb-0 border-t border-slate-200/70 shrink-0" />
 
         {/* ── Step content — fixed flex-1, overflow hidden, never scrolls ── */}
         <div className="flex-1 overflow-hidden px-8 py-5 relative">
@@ -215,11 +215,11 @@ export function OnboardingOverlay({ onClose }: OnboardingProps) {
             >
               {/* Heading */}
               <div className="shrink-0">
-                <p className="text-[11px] font-semibold text-indigo-500 uppercase tracking-widest mb-1">
+                <p className="text-[11px] font-bold text-[#2C7E86] uppercase tracking-widest mb-1">
                   Step {step} of {TOTAL}
                 </p>
-                <h2 className="text-xl font-bold tracking-tight text-gray-900">{copy.title}</h2>
-                <p className="text-sm text-gray-500 mt-1 leading-relaxed">{copy.subtitle}</p>
+                <h2 className="text-xl font-bold tracking-tight text-slate-850">{copy.title}</h2>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">{copy.subtitle}</p>
               </div>
 
               {/* Inputs / selections */}
@@ -234,9 +234,9 @@ export function OnboardingOverlay({ onClose }: OnboardingProps) {
                       onChange={(e) => setWorkspaceName(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && canContinue() && goNext()}
                       autoFocus
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition"
+                      className="w-full rounded-2xl border border-slate-200/90 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:border-[#2C7E86] focus:outline-none focus:ring-2 focus:ring-[#2C7E86]/20 transition shadow-2xs"
                     />
-                    <p className="text-xs text-gray-400 pl-1">
+                    <p className="text-xs text-slate-400 pl-1">
                       Think of it as your writing room. You can create more workspaces later.
                     </p>
                   </div>
@@ -251,7 +251,7 @@ export function OnboardingOverlay({ onClose }: OnboardingProps) {
                     onChange={(e) => setName(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && canContinue() && goNext()}
                     autoFocus
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition"
+                    className="w-full rounded-2xl border border-slate-200/90 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:border-[#2C7E86] focus:outline-none focus:ring-2 focus:ring-[#2C7E86]/20 transition shadow-2xs"
                   />
                 )}
 
@@ -270,7 +270,7 @@ export function OnboardingOverlay({ onClose }: OnboardingProps) {
                         >
                           <span className="text-base leading-none shrink-0">{item.icon}</span>
                           <span className="flex-1">{item.label}</span>
-                          {active && <Check className="h-3.5 w-3.5 shrink-0 text-indigo-600" />}
+                          {active && <Check className="h-3.5 w-3.5 shrink-0 text-[#2C7E86]" />}
                         </motion.button>
                       );
                     })}
@@ -292,11 +292,11 @@ export function OnboardingOverlay({ onClose }: OnboardingProps) {
                         >
                           <span className="flex-1 flex flex-col">
                             <span>{item.label}</span>
-                            <span className={`text-[11px] font-normal mt-0.5 ${active ? "text-indigo-500" : "text-gray-400"}`}>
+                            <span className={`text-[11px] font-normal mt-0.5 ${active ? "text-teal-700" : "text-slate-400"}`}>
                               {item.desc}
                             </span>
                           </span>
-                          {active && <Check className="h-3.5 w-3.5 shrink-0 text-indigo-600" />}
+                          {active && <Check className="h-3.5 w-3.5 shrink-0 text-[#2C7E86]" />}
                         </motion.button>
                       );
                     })}
@@ -317,7 +317,7 @@ export function OnboardingOverlay({ onClose }: OnboardingProps) {
                           className={chipClass(active)}
                         >
                           <span className="flex-1">{item.label}</span>
-                          {active && <Check className="h-3.5 w-3.5 shrink-0 text-indigo-600" />}
+                          {active && <Check className="h-3.5 w-3.5 shrink-0 text-[#2C7E86]" />}
                         </motion.button>
                       );
                     })}
@@ -329,7 +329,7 @@ export function OnboardingOverlay({ onClose }: OnboardingProps) {
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50/40 rounded-b-2xl px-8 py-4 shrink-0">
+        <div className="flex items-center justify-between border-t border-slate-200/70 bg-slate-50/50 rounded-b-[32px] px-8 py-4 shrink-0">
           <div>
             <AnimatePresence>
               {step > 1 && (
@@ -340,7 +340,7 @@ export function OnboardingOverlay({ onClose }: OnboardingProps) {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -4 }}
                   transition={{ duration: 0.15 }}
-                  className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition"
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-[#EAF6F8] hover:text-[#2C7E86] transition cursor-pointer"
                 >
                   Back
                 </motion.button>
@@ -353,10 +353,10 @@ export function OnboardingOverlay({ onClose }: OnboardingProps) {
             onClick={goNext}
             disabled={!canContinue()}
             whileTap={{ scale: canContinue() ? 0.97 : 1 }}
-            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all ${
+            className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-semibold transition-all cursor-pointer ${
               canContinue()
-                ? "bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200/60"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
+                ? "bg-[#2C7E86] hover:bg-[#22676E] text-white shadow-xs hover:shadow-md"
+                : "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
             }`}
           >
             {step === TOTAL ? (
