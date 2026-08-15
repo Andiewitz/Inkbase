@@ -122,3 +122,18 @@ Redesign the document card UI component so that the preview is styled as the cri
 2. **GP2 — Redesign `NewDocumentCard`.** Update `client/src/components/documents/new-document-card.tsx` to mirror the sharp paper sheet action area and soft bottom section.
 3. **GP3 — Verification & Commit.** Verify live frontend rendering and commit with git conventions.
 
+---
+
+## 2026-08-16 — Dashboard UX/UI overhaul: Modern Prose Studio
+
+Comprehensive overhaul of the Inkbase dashboard to elevate the design from a generic document list to a modern editorial prose studio. Features a top drag-and-drop creation hub (`DropzoneBanner`), grid vs. table list view switcher (`DocumentListRow`), branch diff metrics, filter/sort controls, and refined warm paper aesthetic.
+
+### Goalposts
+
+1. **GP1 — Create `dropzone-banner.tsx` & update `types.ts`.** Build top creation hub with 1-click blank manuscript, drag-and-drop upload zone, and quick template shortcuts.
+2. **GP2 — Create `document-list-row.tsx`.** Build high-density table/list row component for power users with word counts, branch status, and inline actions.
+3. **GP3 — Polish `document-card.tsx`.** Enhance paper manuscript card with authentic book typesetting, reading time, branch diff context, and hover toolbar.
+4. **GP4 — Overhaul `dashboard.tsx`.** Wire top dropzone, grid/list switcher, search & filter tabs, and modernized editorial sidebar.
+5. **GP5 — Verification, Build & Commit.** Run full client build, verify all interactions, and commit.
+
+
