@@ -85,8 +85,8 @@ export function DocumentCard({
         </div>
       </div>
 
-      {/* 2. Separate Soft Bottom Meta Container (Distinct Pill Dock with Soft Edges) */}
-      <div className="mt-2.5 p-3 rounded-2xl bg-gradient-to-br from-[#EAF6F8] via-[#DEF2F6] to-[#CFECF3] border border-white/90 shadow-[0_2px_8px_rgba(80,120,150,0.06)] flex items-center justify-between gap-2 group-hover:bg-white group-hover:shadow-sm transition-all">
+      {/* 2. Pedestal Meta Container (Flat top blending with paper, soft rounded bottom) */}
+      <div className="p-3.5 rounded-t-none rounded-b-2xl bg-gradient-to-br from-[#EAF6F8] via-[#DEF2F6] to-[#CFECF3] border-x border-b border-slate-200/90 shadow-[0_2px_8px_rgba(80,120,150,0.06)] flex items-center justify-between gap-2 group-hover:bg-white group-hover:shadow-sm transition-all">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-white/80 text-[#2C7E86] shadow-2xs border border-white">
             <FileText className="w-3.5 h-3.5" />
