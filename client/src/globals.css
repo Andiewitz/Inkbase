@@ -13,9 +13,18 @@
    ─────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* Background ground — soft blue-tinted, not white */
-  --ink-bg: #EEF3F8;
-  --ink-bg-subtle: #E8EFF6;
+  /* Background ground — soft blue-gray atmospheric ground */
+  --ink-bg: #E3EDF6;
+  --ink-bg-subtle: #D8E5F0;
+
+  /* Floating studio canvas shell */
+  --ink-canvas: #F6FBFC;
+  --ink-canvas-card: #FFFFFF;
+
+  /* Frosted cyan mist card gradients */
+  --ink-card-cyan-1: linear-gradient(135deg, #E0F4F7 0%, #CDEEF4 100%);
+  --ink-card-cyan-2: linear-gradient(135deg, #E8F7FA 0%, #D8F2F6 100%);
+  --ink-card-cyan-3: linear-gradient(135deg, #F0FAFC 0%, #E2F5F8 100%);
 
   /* Card/panel surfaces — pure white lifting off the ground */
   --ink-surface: #FFFFFF;
@@ -23,31 +32,35 @@
   --ink-surface-hover: #F0F6FF;
 
   /* Sidebar */
-  --ink-sidebar: #F2F7FC;
-  --ink-sidebar-border: rgba(203, 218, 235, 0.7);
+  --ink-sidebar: #EBF4F7;
+  --ink-sidebar-border: rgba(195, 222, 235, 0.6);
 
   /* Paper (manuscripts) — warm true white, always sharp-edged */
   --ink-paper: #FEFEFE;
-  --ink-paper-border: rgba(200, 210, 220, 0.8);
+  --ink-paper-border: rgba(190, 210, 225, 0.8);
 
-  /* Brand */
+  /* Brand / Teal Accents */
+  --ink-teal: #2C7E86;
+  --ink-teal-hover: #22676E;
+  --ink-teal-light: #E0F5F8;
   --ink-brand: #2563EB;
   --ink-brand-hover: #1D4ED8;
 
   /* Text */
   --ink-text: #0F172A;
-  --ink-text-muted: #64748B;
-  --ink-text-faint: #94A3B8;
+  --ink-text-muted: #5B7285;
+  --ink-text-faint: #8EABB8;
 
   /* Borders */
-  --ink-border: rgba(203, 218, 235, 0.8);
-  --ink-border-strong: rgba(148, 175, 203, 0.6);
+  --ink-border: rgba(200, 222, 236, 0.7);
+  --ink-border-strong: rgba(140, 180, 205, 0.5);
 
-  /* Shadows — airy, not dramatic */
-  --ink-shadow-xs: 0 1px 3px rgba(120, 150, 190, 0.08);
-  --ink-shadow-sm: 0 2px 8px rgba(100, 130, 180, 0.10);
-  --ink-shadow-md: 0 6px 20px rgba(80, 110, 170, 0.10);
-  --ink-shadow-paper: 0 1px 4px rgba(100, 130, 170, 0.08), 0 0 0 1px var(--ink-paper-border);
+  /* Shadows — luxury soft studio shadows */
+  --ink-shadow-xs: 0 1px 3px rgba(80, 120, 160, 0.06);
+  --ink-shadow-sm: 0 4px 14px rgba(70, 110, 150, 0.08);
+  --ink-shadow-md: 0 10px 28px rgba(60, 100, 140, 0.10);
+  --ink-shadow-canvas: 0 24px 64px -16px rgba(50, 95, 140, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+  --ink-shadow-paper: 0 2px 6px rgba(60, 100, 140, 0.08), 0 0 0 1px var(--ink-paper-border);
 
   /* shadcn/ui required CSS vars (mapped from Inkbase tokens) */
   --background: 214 33% 95%;           /* #EEF3F8 in HSL */
@@ -76,12 +89,17 @@
   /* Map Inkbase tokens to Tailwind utilities */
   --color-ink-bg: var(--ink-bg);
   --color-ink-bg-subtle: var(--ink-bg-subtle);
+  --color-ink-canvas: var(--ink-canvas);
+  --color-ink-canvas-card: var(--ink-canvas-card);
   --color-ink-surface: var(--ink-surface);
   --color-ink-surface-subtle: var(--ink-surface-subtle);
   --color-ink-surface-hover: var(--ink-surface-hover);
   --color-ink-sidebar: var(--ink-sidebar);
   --color-ink-paper: var(--ink-paper);
   --color-ink-brand: var(--ink-brand);
+  --color-ink-teal: var(--ink-teal);
+  --color-ink-teal-hover: var(--ink-teal-hover);
+  --color-ink-teal-light: var(--ink-teal-light);
   --color-ink-text: var(--ink-text);
   --color-ink-text-muted: var(--ink-text-muted);
   --color-ink-text-faint: var(--ink-text-faint);

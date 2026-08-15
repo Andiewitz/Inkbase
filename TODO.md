@@ -155,3 +155,18 @@ Lock down Inkbase design token system and migrate to shadcn/ui component primiti
 3. **GP3 — Remove @heroicons/react.** Patch all imports in dashboard + document components to `lucide-react`.
 4. **GP4 — Wire shadcn into cards.** Replace inline button classes and DIY dropdown menus in `document-card.tsx` and `recent-spotlight.tsx` with shadcn `Button` + `DropdownMenu`.
 5. **GP5 — Apply bg token, build + commit.** Apply `bg-ink-bg` to dashboard root, verify `npm run build`, commit.
+
+---
+
+## 2026-08-16 — High-Fidelity Studio Redesign matching reference
+
+Full overhaul of the dashboard into the floating luxury rounded canvas (`rounded-[32px]`) with frosted cyan-mist gradient cards, pill navigation, storage gauge widget, status donut chart, writing velocity wave graph, while preserving sharp-edged paper sheet previews and Lobster Two branding.
+
+### Goalposts
+
+1. **GP1 — Studio Theme & Canvas Tokens in `globals.css`**. Add frosted cyan gradients, studio canvas shadow, and ambient ground styles.
+2. **GP2 — Sidebar Overhaul**. Rebuild sidebar with floating active pill, frosted storage circular gauge, and user pill card.
+3. **GP3 — Top Row Widgets**. Build greeting card ("Hello, Author!"), cyan-mist stat cards ("Words Written", "Active Branches", "Total Manuscripts"), and top quick-access manuscript pills.
+4. **GP4 — Middle Row & Manuscript Studio**. Refactor `RecentSpotlight`, status donut breakdown chart, and segmented manuscript list with sharp paper cards.
+5. **GP5 — Writing Velocity Chart & Verification**. Implement bottom wave velocity trend chart, test full build, and commit.
+
