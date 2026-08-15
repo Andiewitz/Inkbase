@@ -158,15 +158,18 @@ Lock down Inkbase design token system and migrate to shadcn/ui component primiti
 
 ---
 
-## 2026-08-16 — High-Fidelity Studio Redesign matching reference
+---
 
-Full overhaul of the dashboard into the floating luxury rounded canvas (`rounded-[32px]`) with frosted cyan-mist gradient cards, pill navigation, storage gauge widget, status donut chart, writing velocity wave graph, while preserving sharp-edged paper sheet previews and Lobster Two branding.
+## 2026-08-16 — Strip clutter: Spotlight Hero + Manuscript Cards Focus
+
+Strip away extra analytics fluff (stat cards, greeting card, status donut chart, velocity chart) to deliver a clean, focused, uncluttered writing studio. Keep only:
+- Floating luxury studio shell with soft-cyan atmospheric styling
+- "Ready to jump back in, chief?" Spotlight Hero (sharp paper on left, remark on right)
+- "All Manuscripts" Gallery Grid (sharp-edged paper cards + Import Document)
+- Refined floating sidebar
 
 ### Goalposts
-
-1. **GP1 — Studio Theme & Canvas Tokens in `globals.css`**. Add frosted cyan gradients, studio canvas shadow, and ambient ground styles.
-2. **GP2 — Sidebar Overhaul**. Rebuild sidebar with floating active pill, frosted storage circular gauge, and user pill card.
-3. **GP3 — Top Row Widgets**. Build greeting card ("Hello, Author!"), cyan-mist stat cards ("Words Written", "Active Branches", "Total Manuscripts"), and top quick-access manuscript pills.
-4. **GP4 — Middle Row & Manuscript Studio**. Refactor `RecentSpotlight`, status donut breakdown chart, and segmented manuscript list with sharp paper cards.
-5. **GP5 — Writing Velocity Chart & Verification**. Implement bottom wave velocity trend chart, test full build, and commit.
+1. **GP1 — Declutter Dashboard Page**. Remove stats, donut, velocity charts, and extra lists. Keep strictly Spotlight Hero and Manuscript Gallery Grid.
+2. **GP2 — Remove unused widget files**. Clean up unused widget components.
+3. **GP3 — Verify & Commit**. Test `next build` and commit.
 
