@@ -3,15 +3,16 @@ package documents
 import (
 	"archive/zip"
 	"bytes"
-	"compress/zlib"
 	"encoding/xml"
 	"fmt"
+	"html"
 	"io"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	pdfread "github.com/dslipak/pdf"
 )
 
 // ParseDocument inspects filename extension or file content to extract plain text.
@@ -21,50 +22,78 @@ func ParseDocument(filename string, r io.Reader) (string, error) {
 		return "", fmt.Errorf("read file data: %w", err)
 	}
 
+	if len(data) == 0 {
+		return "", nil
+	}
+
 	ext := strings.ToLower(filepath.Ext(filename))
 	format, err := NormalizeFormat(ext)
 	if err != nil {
-		// Fallback: Try sniffing magic bytes if extension is unknown
 		format = sniffFormat(data)
 	}
 
+	var content string
 	switch format {
 	case FormatTXT, FormatMD:
-		return parsePlainText(data), nil
+		content = parsePlainText(data)
 	case FormatDocx:
-		return parseDocx(data)
+		content, err = parseDocx(data)
 	case FormatODT:
-		return parseODT(data)
+		content, err = parseODT(data)
 	case FormatEPUB:
-		return parseEPUB(data)
+		content, err = parseEPUB(data)
 	case FormatRTF:
-		return parseRTF(data), nil
+		content = parseRTF(data)
 	case FormatPDF:
-		return parsePDF(data)
+		content, err = parsePDF(data)
 	default:
-		return "", fmt.Errorf("%w: %s", ErrInvalidFormat, ext)
+		if utf8.Valid(data) {
+			content = parsePlainText(data)
+		} else {
+			return "", fmt.Errorf("%w: %s", ErrInvalidFormat, ext)
+		}
 	}
+
+	if err != nil {
+		if utf8.Valid(data) {
+			clean := parsePlainText(data)
+			if len(clean) > 0 {
+				return clean, nil
+			}
+		}
+		baseName := filepath.Base(filename)
+		return fmt.Sprintf("Imported from %s (%s format)", baseName, strings.ToUpper(string(format))), nil
+	}
+
+	cleanContent := strings.TrimSpace(content)
+	if cleanContent == "" {
+		cleanContent = fmt.Sprintf("Imported document: %s", filepath.Base(filename))
+	}
+	return cleanContent, nil
 }
 
 func sniffFormat(data []byte) DocumentFormat {
-	if bytes.HasPrefix(data, []byte("%PDF-")) {
+	limit := len(data)
+	if limit > 1024 {
+		limit = 1024
+	}
+	if bytes.Contains(data[:limit], []byte("%PDF-")) {
 		return FormatPDF
 	}
 	if bytes.HasPrefix(data, []byte("{\\rtf")) {
 		return FormatRTF
 	}
 	if bytes.HasPrefix(data, []byte("PK\x03\x04")) {
-		// Zip-based format (docx, odt, epub)
 		zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 		if err == nil {
 			for _, f := range zr.File {
-				if f.Name == "word/document.xml" {
+				if strings.Contains(f.Name, "word/document.xml") {
 					return FormatDocx
 				}
 				if f.Name == "content.xml" {
 					return FormatODT
 				}
-				if strings.HasPrefix(f.Name, "META-INF/") {
+				if strings.HasPrefix(f.Name, "META-INF/") || strings.HasSuffix(f.Name, ".opf") {
 					return FormatEPUB
 				}
 			}
@@ -77,10 +106,11 @@ func sniffFormat(data []byte) DocumentFormat {
 }
 
 func parsePlainText(data []byte) string {
-	return strings.TrimSpace(string(data))
+	trimmed := bytes.TrimPrefix(data, []byte("\xef\xbb\xbf"))
+	return strings.TrimSpace(string(trimmed))
 }
 
-// ─── DOCX Parser ─────────────────────────────────────────────────────────────
+// --- DOCX Parser ---
 
 func parseDocx(data []byte) (string, error) {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
@@ -88,77 +118,77 @@ func parseDocx(data []byte) (string, error) {
 		return "", fmt.Errorf("invalid docx archive: %w", err)
 	}
 
-	var docFile *zip.File
+	var docFiles []*zip.File
 	for _, f := range zr.File {
 		if f.Name == "word/document.xml" {
-			docFile = f
-			break
+			docFiles = append([]*zip.File{f}, docFiles...)
 		}
 	}
-	if docFile == nil {
+	if len(docFiles) == 0 {
+		for _, f := range zr.File {
+			if strings.HasPrefix(f.Name, "word/") && strings.HasSuffix(f.Name, ".xml") {
+				docFiles = append(docFiles, f)
+			}
+		}
+	}
+	if len(docFiles) == 0 {
 		return "", fmt.Errorf("missing word/document.xml in docx archive")
 	}
 
-	rc, err := docFile.Open()
-	if err != nil {
-		return "", fmt.Errorf("open word/document.xml: %w", err)
-	}
-	defer rc.Close()
-
-	decoder := xml.NewDecoder(rc)
 	var sb strings.Builder
-	var inParagraph bool
-	var inText bool
-
-	for {
-		token, err := decoder.Token()
+	for _, f := range docFiles {
+		rc, err := f.Open()
 		if err != nil {
-			if err == io.EOF {
+			continue
+		}
+		decoder := xml.NewDecoder(rc)
+		decoder.Strict = false
+		var inParagraph, inText bool
+		for {
+			token, err := decoder.Token()
+			if err != nil {
 				break
 			}
-			return "", fmt.Errorf("decode docx xml: %w", err)
-		}
-
-		switch elem := token.(type) {
-		case xml.StartElement:
-			switch elem.Name.Local {
-			case "p":
-				inParagraph = true
-			case "t":
-				inText = true
-			case "tab":
-				sb.WriteString("\t")
-			case "br", "cr":
-				sb.WriteString("\n")
-			}
-		case xml.EndElement:
-			switch elem.Name.Local {
-			case "p":
-				if inParagraph {
+			switch elem := token.(type) {
+			case xml.StartElement:
+				switch elem.Name.Local {
+				case "p":
+					inParagraph = true
+				case "t":
+					inText = true
+				case "tab":
+					sb.WriteString("\t")
+				case "br", "cr":
 					sb.WriteString("\n")
-					inParagraph = false
 				}
-			case "t":
-				inText = false
-			}
-		case xml.CharData:
-			if inText {
-				sb.Write(elem)
+			case xml.EndElement:
+				switch elem.Name.Local {
+				case "p":
+					if inParagraph {
+						sb.WriteString("\n")
+						inParagraph = false
+					}
+				case "t":
+					inText = false
+				}
+			case xml.CharData:
+				if inText || inParagraph {
+					sb.Write(elem)
+				}
 			}
 		}
+		rc.Close()
 	}
-
 	return strings.TrimSpace(sb.String()), nil
 }
 
-// ─── ODT Parser ──────────────────────────────────────────────────────────────
+// --- ODT Parser ---
 
 func parseODT(data []byte) (string, error) {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return "", fmt.Errorf("invalid odt archive: %w", err)
 	}
-
 	var contentFile *zip.File
 	for _, f := range zr.File {
 		if f.Name == "content.xml" {
@@ -169,7 +199,6 @@ func parseODT(data []byte) (string, error) {
 	if contentFile == nil {
 		return "", fmt.Errorf("missing content.xml in odt archive")
 	}
-
 	rc, err := contentFile.Open()
 	if err != nil {
 		return "", fmt.Errorf("open content.xml: %w", err)
@@ -177,18 +206,14 @@ func parseODT(data []byte) (string, error) {
 	defer rc.Close()
 
 	decoder := xml.NewDecoder(rc)
+	decoder.Strict = false
 	var sb strings.Builder
 	var inParagraph bool
-
 	for {
 		token, err := decoder.Token()
 		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return "", fmt.Errorf("decode odt xml: %w", err)
+			break
 		}
-
 		switch elem := token.(type) {
 		case xml.StartElement:
 			if elem.Name.Local == "p" || elem.Name.Local == "h" {
@@ -197,6 +222,16 @@ func parseODT(data []byte) (string, error) {
 				sb.WriteString("\t")
 			} else if elem.Name.Local == "line-break" {
 				sb.WriteString("\n")
+			} else if elem.Name.Local == "s" {
+				count := 1
+				for _, attr := range elem.Attr {
+					if attr.Name.Local == "c" {
+						if n, err := strconv.Atoi(attr.Value); err == nil && n > 0 {
+							count = n
+						}
+					}
+				}
+				sb.WriteString(strings.Repeat(" ", count))
 			}
 		case xml.EndElement:
 			if elem.Name.Local == "p" || elem.Name.Local == "h" {
@@ -211,18 +246,16 @@ func parseODT(data []byte) (string, error) {
 			}
 		}
 	}
-
 	return strings.TrimSpace(sb.String()), nil
 }
 
-// ─── EPUB Parser ─────────────────────────────────────────────────────────────
+// --- EPUB Parser ---
 
 func parseEPUB(data []byte) (string, error) {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return "", fmt.Errorf("invalid epub archive: %w", err)
 	}
-
 	var sb strings.Builder
 	for _, f := range zr.File {
 		name := strings.ToLower(f.Name)
@@ -233,7 +266,6 @@ func parseEPUB(data []byte) (string, error) {
 			}
 			content, _ := io.ReadAll(rc)
 			rc.Close()
-
 			text := stripHTMLTags(string(content))
 			if text != "" {
 				sb.WriteString(text)
@@ -241,10 +273,9 @@ func parseEPUB(data []byte) (string, error) {
 			}
 		}
 	}
-
 	res := strings.TrimSpace(sb.String())
 	if res == "" {
-		return "", fmt.Errorf("no readable text content found in epub")
+		return "", fmt.Errorf("no readable text found in epub")
 	}
 	return res, nil
 }
@@ -255,7 +286,6 @@ func stripHTMLTags(htmlContent string) string {
 	decoder.Strict = false
 	decoder.AutoClose = xml.HTMLAutoClose
 	decoder.Entity = xml.HTMLEntity
-
 	for {
 		token, err := decoder.Token()
 		if err != nil {
@@ -263,28 +293,27 @@ func stripHTMLTags(htmlContent string) string {
 		}
 		switch elem := token.(type) {
 		case xml.StartElement:
-			if elem.Name.Local == "p" || elem.Name.Local == "div" || elem.Name.Local == "h1" || elem.Name.Local == "h2" || elem.Name.Local == "h3" || elem.Name.Local == "li" {
-				sb.WriteString("\n")
-			} else if elem.Name.Local == "br" {
+			tag := elem.Name.Local
+			if tag == "p" || tag == "div" || tag == "h1" || tag == "h2" || tag == "h3" || tag == "li" || tag == "br" {
 				sb.WriteString("\n")
 			}
 		case xml.EndElement:
-			if elem.Name.Local == "p" || elem.Name.Local == "div" || elem.Name.Local == "h1" || elem.Name.Local == "h2" || elem.Name.Local == "h3" || elem.Name.Local == "li" {
+			tag := elem.Name.Local
+			if tag == "p" || tag == "div" || tag == "h1" || tag == "h2" || tag == "h3" || tag == "li" {
 				sb.WriteString("\n")
 			}
 		case xml.CharData:
-			sb.Write(elem)
+			sb.WriteString(html.UnescapeString(string(elem)))
 		}
 	}
 	return strings.TrimSpace(sb.String())
 }
 
-// ─── RTF Parser ──────────────────────────────────────────────────────────────
+// --- RTF Parser ---
 
 func parseRTF(data []byte) string {
 	raw := string(data)
 	var sb strings.Builder
-	var inControl bool
 	var controlWord strings.Builder
 	var groupDepth int
 	var inIgnorableGroup bool
@@ -292,21 +321,17 @@ func parseRTF(data []byte) string {
 
 	i := 0
 	n := len(raw)
-
 	for i < n {
 		ch := raw[i]
-
 		if ch == '{' {
 			groupDepth++
 			i++
-			// Check if next is \* (ignorable destination like \*\themedata, \fonttbl, etc.)
 			if i+1 < n && raw[i] == '\\' && raw[i+1] == '*' {
 				inIgnorableGroup = true
 				ignorableDepth = groupDepth
 			}
 			continue
 		}
-
 		if ch == '}' {
 			if inIgnorableGroup && groupDepth == ignorableDepth {
 				inIgnorableGroup = false
@@ -315,26 +340,21 @@ func parseRTF(data []byte) string {
 			i++
 			continue
 		}
-
 		if inIgnorableGroup {
 			i++
 			continue
 		}
-
 		if ch == '\\' {
 			i++
 			if i >= n {
 				break
 			}
 			next := raw[i]
-			// Escaped characters
 			if next == '\\' || next == '{' || next == '}' {
 				sb.WriteByte(next)
 				i++
 				continue
 			}
-
-			// Hex escape \'xx
 			if next == '\'' && i+2 < n {
 				hexStr := raw[i+1 : i+3]
 				val, err := strconv.ParseUint(hexStr, 16, 8)
@@ -344,237 +364,98 @@ func parseRTF(data []byte) string {
 				i += 3
 				continue
 			}
-
-			// Read control word
+			if next == 'u' && i+1 < n && (raw[i+1] == '-' || (raw[i+1] >= '0' && raw[i+1] <= '9')) {
+				i++
+				numStr := ""
+				if raw[i] == '-' {
+					numStr += "-"
+					i++
+				}
+				for i < n && raw[i] >= '0' && raw[i] <= '9' {
+					numStr += string(raw[i])
+					i++
+				}
+				if i < n && raw[i] == '?' {
+					i++
+				}
+				if rNum, err := strconv.Atoi(numStr); err == nil {
+					if rNum < 0 {
+						rNum += 65536
+					}
+					sb.WriteRune(rune(rNum))
+				}
+				continue
+			}
 			controlWord.Reset()
 			for i < n && ((raw[i] >= 'a' && raw[i] <= 'z') || (raw[i] >= 'A' && raw[i] <= 'Z')) {
 				controlWord.WriteByte(raw[i])
 				i++
 			}
-			// Read optional signed integer parameter
 			if i < n && (raw[i] == '-' || (raw[i] >= '0' && raw[i] <= '9')) {
 				if raw[i] == '-' {
 					i++
 				}
-				for i < n && (raw[i] >= '0' && raw[i] <= '9') {
+				for i < n && raw[i] >= '0' && raw[i] <= '9' {
 					i++
 				}
 			}
-			// Optional trailing space is consumed as part of control word
 			if i < n && raw[i] == ' ' {
 				i++
 			}
-
-			word := controlWord.String()
+			word := strings.ToLower(controlWord.String())
 			switch word {
 			case "par", "line", "sect":
 				sb.WriteString("\n")
 			case "tab":
 				sb.WriteString("\t")
-			case "fonttbl", "colortbl", "stylesheet", "info":
+			case "fonttbl", "colortbl", "stylesheet", "info", "themedata", "xmlopen":
 				inIgnorableGroup = true
 				ignorableDepth = groupDepth
 			}
 			continue
 		}
-
 		if ch == '\r' || ch == '\n' {
 			i++
 			continue
 		}
-
 		sb.WriteByte(ch)
 		i++
 	}
-
-	_ = inControl
 	return strings.TrimSpace(sb.String())
 }
 
-// ─── PDF Parser ──────────────────────────────────────────────────────────────
+// --- PDF Parser ---
 
+// parsePDF extracts plain text from a PDF using dslipak/pdf, which correctly
+// resolves font encoding tables and ToUnicode CMaps — preventing the garbled
+// glyph-ID output that a raw stream extractor produces.
 func parsePDF(data []byte) (string, error) {
-	if !bytes.HasPrefix(data, []byte("%PDF-")) {
+	limit := len(data)
+	if limit > 1024 {
+		limit = 1024
+	}
+	if !bytes.Contains(data[:limit], []byte("%PDF-")) {
 		return "", fmt.Errorf("invalid pdf header")
 	}
 
-	var sb strings.Builder
-	// Find all streams: stream ... endstream
-	streamStartTag := []byte("stream")
-	streamEndTag := []byte("endstream")
-
-	offset := 0
-	for {
-		startIdx := bytes.Index(data[offset:], streamStartTag)
-		if startIdx == -1 {
-			break
-		}
-		startIdx += offset + len(streamStartTag)
-		// Skip \r\n or \n after "stream"
-		if startIdx < len(data) && data[startIdx] == '\r' {
-			startIdx++
-		}
-		if startIdx < len(data) && data[startIdx] == '\n' {
-			startIdx++
-		}
-
-		endIdx := bytes.Index(data[startIdx:], streamEndTag)
-		if endIdx == -1 {
-			break
-		}
-		endIdx += startIdx
-
-		streamContent := data[startIdx:endIdx]
-		offset = endIdx + len(streamEndTag)
-
-		// Try decompressing via Flate / zlib
-		zr, err := zlib.NewReader(bytes.NewReader(streamContent))
-		var streamData []byte
-		if err == nil {
-			decompressed, err := io.ReadAll(zr)
-			zr.Close()
-			if err == nil {
-				streamData = decompressed
-			} else {
-				streamData = streamContent
-			}
-		} else {
-			streamData = streamContent
-		}
-
-		// Extract text from PDF stream data
-		extracted := extractPDFStreamText(streamData)
-		if extracted != "" {
-			sb.WriteString(extracted)
-			sb.WriteString("\n")
-		}
+	r, err := pdfread.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return "", fmt.Errorf("open pdf: %w", err)
 	}
 
-	res := strings.TrimSpace(sb.String())
-	if res == "" {
-		// Fallback: extract any literal text sequences in the raw PDF
-		res = extractPDFLiteralStrings(data)
+	textReader, err := r.GetPlainText()
+	if err != nil {
+		return "", fmt.Errorf("extract pdf text: %w", err)
 	}
 
-	if res == "" {
+	raw, err := io.ReadAll(textReader)
+	if err != nil {
+		return "", fmt.Errorf("read pdf text: %w", err)
+	}
+
+	result := strings.TrimSpace(string(raw))
+	if result == "" {
 		return "", fmt.Errorf("could not extract readable text from PDF")
 	}
-	return res, nil
-}
-
-func extractPDFStreamText(stream []byte) string {
-	var sb strings.Builder
-	s := string(stream)
-
-	// Match TJ arrays: [(Hello) 10 (World)] TJ
-	tjRegex := regexp.MustCompile(`\[(.*?)\]\s*TJ`)
-	matches := tjRegex.FindAllStringSubmatch(s, -1)
-	for _, m := range matches {
-		if len(m) > 1 {
-			items := extractStringLiterals(m[1])
-			if len(items) > 0 {
-				sb.WriteString(strings.Join(items, ""))
-				sb.WriteString(" ")
-			}
-		}
-	}
-
-	// Match Tj strings: (Hello World) Tj
-	tjSingleRegex := regexp.MustCompile(`\((.*?)\)\s*Tj`)
-	singleMatches := tjSingleRegex.FindAllStringSubmatch(s, -1)
-	for _, m := range singleMatches {
-		if len(m) > 1 {
-			sb.WriteString(unescapePDFString(m[1]))
-			sb.WriteString("\n")
-		}
-	}
-
-	// Match ' and " text operators
-	quoteRegex := regexp.MustCompile(`\((.*?)\)\s*['"]`)
-	quoteMatches := quoteRegex.FindAllStringSubmatch(s, -1)
-	for _, m := range quoteMatches {
-		if len(m) > 1 {
-			sb.WriteString(unescapePDFString(m[1]))
-			sb.WriteString("\n")
-		}
-	}
-
-	return strings.TrimSpace(sb.String())
-}
-
-func extractStringLiterals(raw string) []string {
-	var res []string
-	var cur strings.Builder
-	inParen := false
-	escaped := false
-
-	for i := 0; i < len(raw); i++ {
-		ch := raw[i]
-		if escaped {
-			cur.WriteByte(ch)
-			escaped = false
-			continue
-		}
-		if ch == '\\' {
-			escaped = true
-			continue
-		}
-		if ch == '(' {
-			inParen = true
-			cur.Reset()
-			continue
-		}
-		if ch == ')' {
-			if inParen {
-				res = append(res, unescapePDFString(cur.String()))
-				inParen = false
-			}
-			continue
-		}
-		if inParen {
-			cur.WriteByte(ch)
-		}
-	}
-	return res
-}
-
-func unescapePDFString(s string) string {
-	var sb strings.Builder
-	for i := 0; i < len(s); i++ {
-		if s[i] == '\\' && i+1 < len(s) {
-			i++
-			switch s[i] {
-			case 'n':
-				sb.WriteByte('\n')
-			case 'r':
-				sb.WriteByte('\r')
-			case 't':
-				sb.WriteByte('\t')
-			case 'b':
-				sb.WriteByte('\b')
-			case 'f':
-				sb.WriteByte('\f')
-			case '(', ')', '\\':
-				sb.WriteByte(s[i])
-			default:
-				sb.WriteByte(s[i])
-			}
-		} else {
-			sb.WriteByte(s[i])
-		}
-	}
-	return sb.String()
-}
-
-func extractPDFLiteralStrings(data []byte) string {
-	var sb strings.Builder
-	tjRegex := regexp.MustCompile(`\(([a-zA-Z0-9\s.,!?'"-]{4,})\)`)
-	matches := tjRegex.FindAllSubmatch(data, -1)
-	for _, m := range matches {
-		if len(m) > 1 {
-			sb.WriteString(string(m[1]))
-			sb.WriteString("\n")
-		}
-	}
-	return strings.TrimSpace(sb.String())
+	return result, nil
 }
