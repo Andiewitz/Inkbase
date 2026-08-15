@@ -110,3 +110,15 @@ Delete dummy mock data and implement a fully-featured documents service with Dyn
 5. **GP5 — Client Integration & Dummy Data Cleanup.** Remove mock `DOCUMENTS` data in `client/src/components/documents/data.ts`, wire `client/src/pages/dashboard.tsx` to `/api/documents` (fetch, import file, delete, free-tier limit tracking).
 6. **GP6 — End-to-End Verification & Walkthrough.** Run full test suite across server and client, verify format roundtrip and API endpoints.
 
+---
+
+## 2026-08-16 — Redesign document card paper sheet & footer
+
+Redesign the document card UI component so that the preview is styled as the crisp physical paper sheet itself with sharp rectangular edges (`rounded-none`), subtle paper border, and realistic sheet drop-shadow, while the bottom metadata bar containing title, edit date, and context menu is soft-edged (`rounded-b-2xl`).
+
+### Goalposts
+
+1. **GP1 — Redesign `DocumentCard`.** Update `client/src/components/documents/document-card.tsx` to use sharp paper sheet aesthetic for the top body and soft rounded styling for the bottom metadata section.
+2. **GP2 — Redesign `NewDocumentCard`.** Update `client/src/components/documents/new-document-card.tsx` to mirror the sharp paper sheet action area and soft bottom section.
+3. **GP3 — Verification & Commit.** Verify live frontend rendering and commit with git conventions.
+
