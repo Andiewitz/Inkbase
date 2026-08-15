@@ -59,7 +59,7 @@ function StudioSidebar({
   ];
 
   return (
-    <aside className="w-full md:w-64 shrink-0 bg-[#EAF4F7]/80 md:min-h-full p-5 flex flex-col justify-between border-b md:border-b-0 md:border-r border-[#D2E7EE] select-none">
+    <aside className="w-full md:w-64 h-full shrink-0 bg-[#EAF4F7]/80 p-5 flex flex-col justify-between border-b md:border-b-0 md:border-r border-[#D2E7EE] select-none overflow-hidden">
       <div className="space-y-6">
         {/* Logo Branding */}
         <div className="flex items-center gap-3 px-2 pt-1">
@@ -221,7 +221,7 @@ function StudioDashboardMain({
   });
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-[#F6FBFC] p-6 lg:p-9 space-y-7">
+    <div className="flex-1 h-full min-h-0 overflow-y-auto bg-[#F6FBFC] p-6 lg:p-9 space-y-7">
       {/* Top Header Bar */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -329,7 +329,7 @@ function StudioDashboardMain({
   );
 }
 
-// ─── Dashboard Page Wrapper (Floating Studio Canvas) ──────────────────────────
+// ─── Dashboard Page Wrapper (Unified Shell with Independent Scroll) ───────────
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -456,9 +456,10 @@ export default function DashboardPage() {
   if (!isMounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#E3EDF6] p-2 sm:p-4 lg:p-6 flex items-center justify-center">
+    <div className="h-screen w-screen overflow-hidden bg-[#E3EDF6] p-2 sm:p-4 lg:p-6 flex items-center justify-center">
       {/* Unified Floating Rounded Studio Shell */}
-      <div className="w-full max-w-[1520px] min-h-[92vh] rounded-[28px] sm:rounded-[36px] bg-[#F5FAFC] border border-white/90 shadow-[0_24px_70px_-15px_rgba(50,95,140,0.22)] overflow-hidden flex flex-col md:flex-row">
+      <div className="w-full max-w-[1520px] h-full max-h-full rounded-[28px] sm:rounded-[36px] bg-[#F5FAFC] border border-white/90 shadow-[0_24px_70px_-15px_rgba(50,95,140,0.22)] overflow-hidden flex flex-col md:flex-row">
+        {/* Fixed Sidebar inside the shell */}
         <StudioSidebar
           documents={documents}
           userEmail={userEmail}
@@ -467,6 +468,7 @@ export default function DashboardPage() {
           onLogout={handleLogout}
         />
 
+        {/* Independently Scrollable Main Studio Content */}
         <StudioDashboardMain
           documents={documents}
           loading={loading}
