@@ -47,13 +47,13 @@ export function DocumentCard({
       onClick={onClick}
       className="group relative flex h-full cursor-pointer flex-col overflow-visible"
     >
-      {/* Paper Sheet Preview (Sharp Edges - Physical Paper Look) */}
-      <div className="relative aspect-[3/4] w-full rounded-none border border-slate-200/90 border-b-slate-100 bg-white p-4.5 shadow-[0_1px_4px_rgba(100,130,170,0.08)] group-hover:shadow-[0_8px_24px_rgba(80,110,170,0.12)] transition-all flex flex-col justify-between overflow-hidden">
+      {/* 1. Paper Sheet Preview (Strictly Sharp Edges - Physical Paper Look) */}
+      <div className="relative aspect-[3/4] w-full rounded-none border border-slate-200/90 bg-white p-4.5 shadow-[0_2px_8px_rgba(80,120,150,0.07)] group-hover:shadow-[0_10px_26px_rgba(60,110,140,0.14)] group-hover:border-[#A2D9E2] transition-all flex flex-col justify-between overflow-hidden">
         {/* Top Paper Header & Skeletal lines */}
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2 pb-1 border-b border-slate-100/90">
             <div className="h-2 w-2/5 bg-slate-800/80 rounded-none" />
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-none bg-blue-50 text-blue-700 tracking-wider uppercase border border-blue-100">
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-none bg-[#E5F5F8] text-[#2C7E86] tracking-wider uppercase border border-[#D0EEF4]">
               {formatUpper}
             </span>
           </div>
@@ -72,7 +72,7 @@ export function DocumentCard({
 
         {/* Paper Sheet Footer Meta */}
         <div className="pt-2.5 flex items-center justify-between border-t border-slate-100 text-[9px] text-slate-400 font-sans">
-          <span className="font-medium">{wordCount.toLocaleString()} words</span>
+          <span className="font-medium text-slate-500">{wordCount.toLocaleString()} words</span>
           <span
             className={`font-semibold px-1.5 py-0.5 rounded-none text-[8px] uppercase tracking-wider ${
               isEdit
@@ -85,21 +85,21 @@ export function DocumentCard({
         </div>
       </div>
 
-      {/* Card Bottom Meta Container (Soft Edged) */}
-      <div className="p-3.5 bg-slate-50/90 border-x border-b border-slate-200/90 rounded-b-2xl flex items-center justify-between gap-2 shadow-xs group-hover:bg-white transition-colors">
+      {/* 2. Separate Soft Bottom Meta Container (Distinct Pill Dock with Soft Edges) */}
+      <div className="mt-2.5 p-3 rounded-2xl bg-gradient-to-br from-[#EAF6F8] via-[#DEF2F6] to-[#CFECF3] border border-white/90 shadow-[0_2px_8px_rgba(80,120,150,0.06)] flex items-center justify-between gap-2 group-hover:bg-white group-hover:shadow-sm transition-all">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="shrink-0 text-blue-600">
-            <FileText className="w-5 h-5" />
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-white/80 text-[#2C7E86] shadow-2xs border border-white">
+            <FileText className="w-3.5 h-3.5" />
           </div>
 
           <div className="min-w-0">
-            <h4 className="text-xs font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
+            <h4 className="text-xs font-bold text-slate-850 truncate group-hover:text-[#2C7E86] transition-colors">
               {doc.title}
             </h4>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[11px] text-slate-400">{formattedDate}</span>
+              <span className="text-[10px] text-slate-400 font-medium">{formattedDate}</span>
               {isEdit && (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800">
+                <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800">
                   {pendingChanges} edits
                 </span>
               )}
@@ -114,7 +114,7 @@ export function DocumentCard({
               <button
                 type="button"
                 aria-label="Document options"
-                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition cursor-pointer outline-none focus:ring-1 focus:ring-blue-400"
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-white/80 transition cursor-pointer outline-none"
               >
                 <MoreVertical className="w-4 h-4" />
               </button>
