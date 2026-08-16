@@ -158,6 +158,14 @@ func handleUpdateDocument(svc *documents.Service) http.HandlerFunc {
 			shared.WriteJSON(w, http.StatusNotFound, map[string]string{"error": "document not found"})
 			return
 		}
+		if errors.Is(err, documents.ErrDocumentConflict) {
+			shared.WriteJSON(w, http.StatusConflict, map[string]any{
+				"error":    err.Error(),
+				"conflict": true,
+				"document": doc,
+			})
+			return
+		}
 		if err != nil {
 			shared.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not update document"})
 			return

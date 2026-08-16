@@ -9,8 +9,10 @@ import { useAutoSave, type SaveStatus } from "./use-autosave";
 interface RichEditorProps {
   docId: string;
   initialContent: string;
+  initialServerUpdatedAt?: string;
   onEditorReady?: (editor: ReturnType<typeof useEditor>) => void;
   onSaveStatusChange?: (s: SaveStatus) => void;
+  onResynced?: () => void;
 }
 
 /**
@@ -38,8 +40,10 @@ function plainTextToHtml(text: string): string {
 export function RichEditor({
   docId,
   initialContent,
+  initialServerUpdatedAt,
   onEditorReady,
   onSaveStatusChange,
+  onResynced,
 }: RichEditorProps) {
   const handleSaveStatus = React.useCallback(
     (s: SaveStatus) => onSaveStatusChange?.(s),
@@ -74,8 +78,26 @@ export function RichEditor({
     if (editor) onEditorReady?.(editor);
   }, [editor, onEditorReady]);
 
-  // Wire auto-save
-  useAutoSave(editor, docId, true, handleSaveStatus);
+  // Handle server-authority conflict resync
+  const handleConflictResync = React.useCallback(
+    (canonicalContent: string) => {
+      if (editor) {
+        editor.commands.setContent(plainTextToHtml(canonicalContent));
+        onResynced?.();
+      }
+    },
+    [editor, onResynced],
+  );
+
+  // Wire debounced auto-save with server reconciliation
+  useAutoSave(
+    editor,
+    docId,
+    initialServerUpdatedAt,
+    true,
+    handleSaveStatus,
+    handleConflictResync,
+  );
 
   return (
     <EditorContent

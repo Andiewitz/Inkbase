@@ -107,6 +107,12 @@ export function EditorShell({
                 <span className="text-slate-400">Saved</span>
               </>
             )}
+            {saveStatus === "conflict" && (
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5 text-amber-500" />
+                <span className="text-amber-600 font-semibold">Resynced with cloud</span>
+              </>
+            )}
             {saveStatus === "error" && (
               <>
                 <AlertCircle className="h-3.5 w-3.5 text-rose-500" />
@@ -170,6 +176,7 @@ export function EditorShell({
             <RichEditor
               docId={doc.id}
               initialContent={doc.content || doc.excerpt || ""}
+              initialServerUpdatedAt={doc.updated_at}
               onEditorReady={(ed) => setEditor(ed)}
               onSaveStatusChange={(s) => setSaveStatus(s)}
             />

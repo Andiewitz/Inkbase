@@ -12,40 +12,41 @@ import (
 
 func New() http.Handler {
 	mux := http.NewServeMux()
-	store := newLimiterStore()
 
-	// Health
+	authLimiter := RateLimit(NewAuthLimiter())
+	generalLimiter := RateLimit(NewGeneralLimiter())
+
+	// Health — unthrottled
 	healthSvc := health.NewService()
 	mux.HandleFunc("GET /api/health", handleHealth(healthSvc))
 
-	// Auth — public
+	// Auth — public (Strict rate limiter to prevent credential brute-forcing)
 	authSvc, err := auth.NewService()
 	if err != nil {
 		log.Fatalf("auth service: %v", err)
 	}
-	mux.HandleFunc("POST /api/auth/register", handleRegister(authSvc))
-	mux.HandleFunc("POST /api/auth/login", handleLogin(authSvc))
-	mux.HandleFunc("POST /api/auth/logout", handleLogout(authSvc))
-	mux.HandleFunc("POST /api/auth/refresh", handleRefresh(authSvc))
+	mux.Handle("POST /api/auth/register", authLimiter(handleRegister(authSvc)))
+	mux.Handle("POST /api/auth/login", authLimiter(handleLogin(authSvc)))
+	mux.Handle("POST /api/auth/logout", authLimiter(handleLogout(authSvc)))
+	mux.Handle("POST /api/auth/refresh", authLimiter(handleRefresh(authSvc)))
 
 	// Auth — protected (RequireAuth reads the session cookie)
 	requireAuth := RequireAuth(authSvc)
-	mux.Handle("GET /api/auth/me", requireAuth(handleMe()))
+	mux.Handle("GET /api/auth/me", generalLimiter(requireAuth(handleMe())))
 
-	// Documents — protected
+	// Documents — protected (Generous rate limiter for active editing, auto-saves & reads)
 	docSvc, err := documents.NewService(context.Background())
 	if err != nil {
 		log.Fatalf("documents service: %v", err)
 	}
-	mux.Handle("GET /api/documents", requireAuth(handleListDocuments(docSvc)))
-	mux.Handle("POST /api/documents", requireAuth(handleCreateDocument(docSvc)))
-	mux.Handle("POST /api/documents/import", requireAuth(handleImportDocument(docSvc)))
-	mux.Handle("GET /api/documents/{id}", requireAuth(handleGetDocument(docSvc)))
-	mux.Handle("PATCH /api/documents/{id}", requireAuth(handleUpdateDocument(docSvc)))
-	mux.Handle("DELETE /api/documents/{id}", requireAuth(handleDeleteDocument(docSvc)))
-	mux.Handle("GET /api/documents/{id}/export", requireAuth(handleExportDocument(docSvc)))
+	mux.Handle("GET /api/documents", generalLimiter(requireAuth(handleListDocuments(docSvc))))
+	mux.Handle("POST /api/documents", generalLimiter(requireAuth(handleCreateDocument(docSvc))))
+	mux.Handle("POST /api/documents/import", generalLimiter(requireAuth(handleImportDocument(docSvc))))
+	mux.Handle("GET /api/documents/{id}", generalLimiter(requireAuth(handleGetDocument(docSvc))))
+	mux.Handle("PUT /api/documents/{id}", generalLimiter(requireAuth(handleUpdateDocument(docSvc))))
+	mux.Handle("PATCH /api/documents/{id}", generalLimiter(requireAuth(handleUpdateDocument(docSvc))))
+	mux.Handle("DELETE /api/documents/{id}", generalLimiter(requireAuth(handleDeleteDocument(docSvc))))
+	mux.Handle("GET /api/documents/{id}/export", generalLimiter(requireAuth(handleExportDocument(docSvc))))
 
-	// Rate limiter wraps the entire mux — every route is covered.
-	return RateLimit(store)(mux)
+	return mux
 }
-

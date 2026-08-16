@@ -10,14 +10,17 @@ import (
 	"inkbase/server/shared"
 )
 
-// Token-bucket constants.
-// Each client IP starts with a full bucket (burst), then earns tokens back at
-// a steady rate. This is intentionally more lenient than a sliding window:
-// a user who sends 10 quick requests then goes quiet for 10 s is back to full.
+// Default Token-bucket constants.
 const (
-	bucketCapacity = 10.0            // max tokens (burst ceiling)
-	bucketRate     = 1.0             // tokens earned per second (60 req/min sustained)
-	bucketTTL      = 5 * time.Minute // evict idle buckets after this long
+	defaultBucketTTL = 5 * time.Minute // evict idle buckets after this long
+
+	// Auth tier: Strict limits to prevent brute-force attacks against credentials.
+	AuthBucketCapacity = 10.0 // 10 burst tokens
+	AuthBucketRate     = 1.0  // 1 token/sec (60 req/min sustained)
+
+	// General tier: Generous limits for active document editing, real-time typing & auto-saves.
+	GeneralBucketCapacity = 60.0 // 60 burst tokens
+	GeneralBucketRate     = 10.0 // 10 tokens/sec (600 req/min sustained)
 )
 
 // bucket is a single client's token bucket. The mutex is per-bucket so
@@ -30,7 +33,7 @@ type bucket struct {
 
 // allow consumes one token and returns true, or returns false if the bucket is
 // empty. Tokens are lazily refilled based on elapsed time since last request.
-func (b *bucket) allow() bool {
+func (b *bucket) allow(capacity, rate float64) bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -38,9 +41,9 @@ func (b *bucket) allow() bool {
 	elapsed := now.Sub(b.lastSeen).Seconds()
 	b.lastSeen = now
 
-	b.tokens += elapsed * bucketRate
-	if b.tokens > bucketCapacity {
-		b.tokens = bucketCapacity
+	b.tokens += elapsed * rate
+	if b.tokens > capacity {
+		b.tokens = capacity
 	}
 	if b.tokens < 1 {
 		return false
@@ -51,14 +54,32 @@ func (b *bucket) allow() bool {
 
 // limiterStore holds per-IP buckets and cleans up stale ones in the background.
 type limiterStore struct {
-	mu      sync.Mutex
-	buckets map[string]*bucket
+	mu       sync.Mutex
+	capacity float64
+	rate     float64
+	ttl      time.Duration
+	buckets  map[string]*bucket
 }
 
-func newLimiterStore() *limiterStore {
-	s := &limiterStore{buckets: make(map[string]*bucket)}
+func newLimiterStore(capacity, rate float64) *limiterStore {
+	s := &limiterStore{
+		capacity: capacity,
+		rate:     rate,
+		ttl:      defaultBucketTTL,
+		buckets:  make(map[string]*bucket),
+	}
 	go s.cleanup()
 	return s
+}
+
+// NewAuthLimiter creates a strict rate limiter for authentication routes.
+func NewAuthLimiter() *limiterStore {
+	return newLimiterStore(AuthBucketCapacity, AuthBucketRate)
+}
+
+// NewGeneralLimiter creates a generous rate limiter for document and user data routes.
+func NewGeneralLimiter() *limiterStore {
+	return newLimiterStore(GeneralBucketCapacity, GeneralBucketRate)
 }
 
 // get returns the existing bucket for ip or creates a new full one.
@@ -67,21 +88,21 @@ func (s *limiterStore) get(ip string) *bucket {
 	defer s.mu.Unlock()
 	b, ok := s.buckets[ip]
 	if !ok {
-		b = &bucket{tokens: bucketCapacity, lastSeen: time.Now()}
+		b = &bucket{tokens: s.capacity, lastSeen: time.Now()}
 		s.buckets[ip] = b
 	}
 	return b
 }
 
-// cleanup runs forever, evicting buckets that haven't been seen in bucketTTL.
+// cleanup runs forever, evicting buckets that haven't been seen in ttl.
 func (s *limiterStore) cleanup() {
-	ticker := time.NewTicker(bucketTTL)
+	ticker := time.NewTicker(s.ttl)
 	defer ticker.Stop()
 	for range ticker.C {
 		s.mu.Lock()
 		for ip, b := range s.buckets {
 			b.mu.Lock()
-			idle := time.Since(b.lastSeen) > bucketTTL
+			idle := time.Since(b.lastSeen) > s.ttl
 			b.mu.Unlock()
 			if idle {
 				delete(s.buckets, ip)
@@ -92,12 +113,11 @@ func (s *limiterStore) cleanup() {
 }
 
 // RateLimit returns middleware that enforces the token-bucket limit per client IP.
-// Wrap the outermost handler with this so every route is protected.
 func RateLimit(store *limiterStore) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ip := clientIP(r)
-			if !store.get(ip).allow() {
+			if !store.get(ip).allow(store.capacity, store.rate) {
 				w.Header().Set("Retry-After", "1")
 				shared.WriteJSON(w, http.StatusTooManyRequests, map[string]string{
 					"error": "too many requests — please slow down",

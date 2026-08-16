@@ -223,6 +223,20 @@ Build a full rich-text manuscript editor rendered 1:1 to physical A4/Letter pape
 4. **GP4 — Routing & Dashboard Integration**. Wire `/dashboard/[id]` page route, connect card and spotlight click handlers, and direct routing on manuscript creation.
 5. **GP5 — Verification & Build Check**. Verify Next.js production build and commit.
 
+---
+
+## 2026-08-17 — Auto-Save Debouncing, Server Source-of-Truth Resyncing & Tiered Rate Limiting
+
+Implement traffic-efficient client debouncing, server-authoritative optimistic concurrency checks (`base_updated_at` / `409 Conflict`), safe zero-data-loss resyncing, tiered rate limiters (strict Auth vs. generous Document buckets), comprehensive test suite, and incident post-mortem.
+
+### Goalposts
+1. **GP1 — Server-Side Concurrency & Server-as-Source-of-Truth**. Add `BaseUpdatedAt` to `models.go`, enforce server authority in `update.go`, and return canonical document on `409 Conflict` in `internal/api/documents.go`.
+2. **GP2 — Tiered Rate Limiting Middleware**. Refactor `ratelimit.go` and `server.go` into `AuthLimiter` (10 burst, 1/s) and `GeneralLimiter` (60 burst, 10/s) with health unthrottled.
+3. **GP3 — Client-Side Debounced Sync Engine**. Refactor `use-autosave.ts`, `rich-editor.tsx`, and `editor-shell.tsx` with in-flight request queue, local timestamped backup, and automatic server reconciliation.
+4. **GP4 — Zero-Data-Loss & Resync Integration Tests**. Write `server/tests/sync_conflict_test.go` and update `ratelimit_test.go`.
+5. **GP5 — Post-Mortem Documentation & Verification**. Write `docs/post-mortems/2026-08-17-rate-limiting-and-sync-resilience.md`, verify tests and build, and commit.
+
+
 
 
 

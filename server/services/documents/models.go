@@ -12,6 +12,7 @@ var (
 	ErrStorageLimitReached = errors.New("free tier limit reached (maximum 3 documents)")
 	ErrInvalidFormat       = errors.New("unsupported file format")
 	ErrInvalidTitle        = errors.New("document title cannot be empty")
+	ErrDocumentConflict    = errors.New("document has been updated on server; server is the source of truth")
 )
 
 const (

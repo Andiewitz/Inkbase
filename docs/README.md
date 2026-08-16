@@ -10,5 +10,6 @@ Project documentation for Inkbase.
 - `post-mortems/` — incident post-mortems:
   - [`2026-08-10-auth-hardening.md`](post-mortems/2026-08-10-auth-hardening.md)
   - [`2026-08-16-token-refresh-race-condition.md`](post-mortems/2026-08-16-token-refresh-race-condition.md) (#8-16-2026)
+  - [`2026-08-17-rate-limiting-and-sync-resilience.md`](post-mortems/2026-08-17-rate-limiting-and-sync-resilience.md) (#8-17-2026)
 
 Keep documentation close to the code and up to date with changes.
