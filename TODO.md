@@ -210,6 +210,20 @@ Resolve the concurrent token refresh collision in `client/src/lib/api.ts` that c
 4. **GP4 — Post-Mortem Documentation**. Write `docs/post-mortems/2026-08-16-token-refresh-race-condition.md` and link in docs README.
 5. **GP5 — Verification & Commit**. Verify full Go test suite and Next.js build, then commit.
 
+---
+
+## 2026-08-17 — Word & Google Docs-style 1:1 Manuscript Editor
+
+Build a full rich-text manuscript editor rendered 1:1 to physical A4/Letter paper within the floating studio environment.
+
+### Goalposts
+1. **GP1 — Editor Shell Layout & Header**. Create `client/src/components/editor/editor-shell.tsx` with Word/Google Docs header, word count, save status, export dropdown, and centered A4 paper canvas.
+2. **GP2 — Tiptap Rich Text & Formatting Toolbar**. Implement `toolbar.tsx` and `rich-editor.tsx` supporting headings, paragraph styling, bold, italic, and lists.
+3. **GP3 — Debounced Auto-save Hook**. Create `use-autosave.ts` saving manuscript content and live word counts via `PUT /api/documents/:id`.
+4. **GP4 — Routing & Dashboard Integration**. Wire `/dashboard/[id]` page route, connect card and spotlight click handlers, and direct routing on manuscript creation.
+5. **GP5 — Verification & Build Check**. Verify Next.js production build and commit.
+
+
 
 
 

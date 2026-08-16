@@ -2,7 +2,14 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { FileText, MoreVertical, Trash2, Download } from "lucide-react";
+import {
+  FileText,
+  MoreVertical,
+  Trash2,
+  ExternalLink,
+  ChevronRight,
+  FileDown,
+} from "lucide-react";
 import type { DocumentItem } from "./types";
 import { PaperPreview } from "./paper-preview";
 import {
@@ -10,9 +17,19 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
+
+const EXPORT_FORMATS: { label: string; ext: string }[] = [
+  { label: "Word Document", ext: "docx" },
+  { label: "PDF", ext: "pdf" },
+  { label: "Markdown", ext: "md" },
+  { label: "EPUB", ext: "epub" },
+  { label: "Plain Text", ext: "txt" },
+];
 
 export function DocumentCard({
   doc,
@@ -71,7 +88,7 @@ export function DocumentCard({
           </div>
         </div>
 
-        {/* shadcn Dropdown Menu */}
+        {/* Context Menu */}
         <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -83,25 +100,46 @@ export function DocumentCard({
                 <MoreVertical className="w-4 h-4" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuLabel>Export As</DropdownMenuLabel>
-              {["docx", "pdf", "md", "epub", "txt"].map((fmt) => (
-                <DropdownMenuItem
-                  key={fmt}
-                  onClick={() => onExport?.(doc.id, fmt)}
-                  className="font-medium uppercase"
-                >
-                  <Download className="w-3.5 h-3.5 mr-2 text-slate-400" />
-                  .{fmt}
-                </DropdownMenuItem>
-              ))}
+            <DropdownMenuContent align="end" className="w-48">
+              {/* Primary action */}
+              <DropdownMenuItem onClick={onClick} className="font-semibold">
+                <ExternalLink className="w-3.5 h-3.5 mr-2 text-slate-400" />
+                Open
+              </DropdownMenuItem>
+
               <DropdownMenuSeparator />
+
+              {/* Export submenu */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="font-medium">
+                  <FileDown className="w-3.5 h-3.5 mr-2 text-slate-400" />
+                  Export as
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-44">
+                  {EXPORT_FORMATS.map(({ label, ext }) => (
+                    <DropdownMenuItem
+                      key={ext}
+                      onClick={() => onExport?.(doc.id, ext)}
+                      className="font-medium"
+                    >
+                      <span className="w-10 text-[10px] font-bold text-slate-400 uppercase shrink-0">
+                        .{ext}
+                      </span>
+                      {label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              <DropdownMenuSeparator />
+
+              {/* Destructive */}
               <DropdownMenuItem
                 onClick={() => onDelete?.(doc.id)}
                 className="font-semibold text-red-600 focus:bg-red-50 focus:text-red-700"
               >
                 <Trash2 className="w-3.5 h-3.5 mr-2 text-red-500" />
-                Delete manuscript
+                Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

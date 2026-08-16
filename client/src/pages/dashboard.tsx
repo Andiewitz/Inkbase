@@ -193,6 +193,7 @@ function StudioDashboardMain({
   setSearchQuery,
   onImportFile,
   onCreateBlank,
+  onOpenDoc,
   onDelete,
   onExport,
 }: {
@@ -203,6 +204,7 @@ function StudioDashboardMain({
   setSearchQuery: (q: string) => void;
   onImportFile: (file: File) => void;
   onCreateBlank: () => void;
+  onOpenDoc: (id: string) => void;
   onDelete: (id: string) => void;
   onExport: (id: string, format: string) => void;
 }) {
@@ -271,7 +273,7 @@ function StudioDashboardMain({
       {!loading && !searchQuery && recentDoc && (
         <RecentSpotlight
           doc={recentDoc}
-          onOpen={() => {}}
+          onOpen={() => onOpenDoc(recentDoc.id)}
           onExport={onExport}
           onDelete={onDelete}
         />
@@ -328,7 +330,7 @@ function StudioDashboardMain({
               <DocumentCard
                 key={doc.id}
                 doc={doc}
-                onClick={() => {}}
+                onClick={() => onOpenDoc(doc.id)}
                 onDelete={onDelete}
                 onExport={onExport}
               />
@@ -429,7 +431,12 @@ export default function DashboardPage() {
         body: JSON.stringify({ title: "Untitled Manuscript" }),
       });
       if (res.ok) {
-        loadDocuments();
+        const data = await res.json();
+        if (data.document?.id) {
+          router.push(`/dashboard/${data.document.id}`);
+        } else {
+          loadDocuments();
+        }
       }
     } catch {
       setError("Could not create blank document");
@@ -446,7 +453,12 @@ export default function DashboardPage() {
         body: formData,
       });
       if (res.ok) {
-        loadDocuments();
+        const data = await res.json();
+        if (data.document?.id) {
+          router.push(`/dashboard/${data.document.id}`);
+        } else {
+          loadDocuments();
+        }
       } else {
         const err = await res.json().catch(() => ({}));
         setError(err.error || "Import failed");
@@ -515,6 +527,7 @@ export default function DashboardPage() {
           setSearchQuery={setSearchQuery}
           onImportFile={handleImportFile}
           onCreateBlank={handleCreateBlank}
+          onOpenDoc={(docId) => router.push(`/dashboard/${docId}`)}
           onDelete={handleDelete}
           onExport={handleExport}
         />
