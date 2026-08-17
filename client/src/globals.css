@@ -232,6 +232,8 @@ input:-webkit-autofill:focus {
   font-size: 15px;
   line-height: 1.7;
   min-height: 100%;
+  tab-size: 4;
+  -moz-tab-size: 4;
 }
 
 .prose-editor:focus {
@@ -240,6 +242,7 @@ input:-webkit-autofill:focus {
 
 .prose-editor p {
   margin-bottom: 1.15em;
+  white-space: pre-wrap;
 }
 
 .prose-editor h1 {

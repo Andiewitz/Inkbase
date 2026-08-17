@@ -15,7 +15,7 @@ import (
 	pdfread "github.com/dslipak/pdf"
 )
 
-// ParseDocument inspects filename extension or file content to extract plain text.
+// ParseDocument inspects filename extension or file content to extract structured text.
 func ParseDocument(filename string, r io.Reader) (string, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
@@ -107,7 +107,7 @@ func sniffFormat(data []byte) DocumentFormat {
 
 func parsePlainText(data []byte) string {
 	trimmed := bytes.TrimPrefix(data, []byte("\xef\xbb\xbf"))
-	return strings.TrimSpace(string(trimmed))
+	return string(trimmed)
 }
 
 // --- DOCX Parser ---
@@ -143,7 +143,11 @@ func parseDocx(data []byte) (string, error) {
 		}
 		decoder := xml.NewDecoder(rc)
 		decoder.Strict = false
+
 		var inParagraph, inText bool
+		var headingLevel int
+		var pHasContent bool
+
 		for {
 			token, err := decoder.Token()
 			if err != nil {
@@ -154,10 +158,35 @@ func parseDocx(data []byte) (string, error) {
 				switch elem.Name.Local {
 				case "p":
 					inParagraph = true
+					headingLevel = 0
+					pHasContent = false
+				case "pStyle":
+					for _, attr := range elem.Attr {
+						if attr.Name.Local == "val" {
+							val := strings.ToLower(attr.Value)
+							if strings.Contains(val, "heading1") || strings.Contains(val, "title") {
+								headingLevel = 1
+							} else if strings.Contains(val, "heading2") {
+								headingLevel = 2
+							} else if strings.Contains(val, "heading3") {
+								headingLevel = 3
+							}
+						}
+					}
 				case "t":
 					inText = true
+					if inParagraph && !pHasContent {
+						if headingLevel == 1 {
+							sb.WriteString("# ")
+						} else if headingLevel == 2 {
+							sb.WriteString("## ")
+						} else if headingLevel == 3 {
+							sb.WriteString("### ")
+						}
+					}
 				case "tab":
 					sb.WriteString("\t")
+					pHasContent = true
 				case "br", "cr":
 					sb.WriteString("\n")
 				}
@@ -165,8 +194,9 @@ func parseDocx(data []byte) (string, error) {
 				switch elem.Name.Local {
 				case "p":
 					if inParagraph {
-						sb.WriteString("\n")
+						sb.WriteString("\n\n")
 						inParagraph = false
+						headingLevel = 0
 					}
 				case "t":
 					inText = false
@@ -174,6 +204,9 @@ func parseDocx(data []byte) (string, error) {
 			case xml.CharData:
 				if inText || inParagraph {
 					sb.Write(elem)
+					if len(bytes.TrimSpace(elem)) > 0 {
+						pHasContent = true
+					}
 				}
 			}
 		}
@@ -218,6 +251,20 @@ func parseODT(data []byte) (string, error) {
 		case xml.StartElement:
 			if elem.Name.Local == "p" || elem.Name.Local == "h" {
 				inParagraph = true
+				if elem.Name.Local == "h" {
+					for _, attr := range elem.Attr {
+						if attr.Name.Local == "outline-level" {
+							lvl, _ := strconv.Atoi(attr.Value)
+							if lvl == 1 {
+								sb.WriteString("# ")
+							} else if lvl == 2 {
+								sb.WriteString("## ")
+							} else if lvl >= 3 {
+								sb.WriteString("### ")
+							}
+						}
+					}
+				}
 			} else if elem.Name.Local == "tab" {
 				sb.WriteString("\t")
 			} else if elem.Name.Local == "line-break" {
@@ -236,7 +283,7 @@ func parseODT(data []byte) (string, error) {
 		case xml.EndElement:
 			if elem.Name.Local == "p" || elem.Name.Local == "h" {
 				if inParagraph {
-					sb.WriteString("\n")
+					sb.WriteString("\n\n")
 					inParagraph = false
 				}
 			}
@@ -258,34 +305,32 @@ func parseEPUB(data []byte) (string, error) {
 	}
 	var sb strings.Builder
 	for _, f := range zr.File {
-		name := strings.ToLower(f.Name)
-		if strings.HasSuffix(name, ".xhtml") || strings.HasSuffix(name, ".html") || strings.HasSuffix(name, ".htm") {
+		ext := strings.ToLower(filepath.Ext(f.Name))
+		if ext == ".xhtml" || ext == ".html" || ext == ".htm" {
 			rc, err := f.Open()
 			if err != nil {
 				continue
 			}
-			content, _ := io.ReadAll(rc)
+			htmlData, err := io.ReadAll(rc)
 			rc.Close()
-			text := stripHTMLTags(string(content))
-			if text != "" {
-				sb.WriteString(text)
-				sb.WriteString("\n\n")
+			if err == nil {
+				text := extractHTMLText(htmlData)
+				if len(text) > 0 {
+					sb.WriteString(text)
+					sb.WriteString("\n\n")
+				}
 			}
 		}
 	}
-	res := strings.TrimSpace(sb.String())
-	if res == "" {
-		return "", fmt.Errorf("no readable text found in epub")
-	}
-	return res, nil
+	return strings.TrimSpace(sb.String()), nil
 }
 
-func stripHTMLTags(htmlContent string) string {
-	var sb strings.Builder
-	decoder := xml.NewDecoder(strings.NewReader(htmlContent))
+func extractHTMLText(data []byte) string {
+	decoder := xml.NewDecoder(bytes.NewReader(data))
 	decoder.Strict = false
-	decoder.AutoClose = xml.HTMLAutoClose
 	decoder.Entity = xml.HTMLEntity
+	var sb strings.Builder
+	var skip bool
 	for {
 		token, err := decoder.Token()
 		if err != nil {
@@ -293,17 +338,29 @@ func stripHTMLTags(htmlContent string) string {
 		}
 		switch elem := token.(type) {
 		case xml.StartElement:
-			tag := elem.Name.Local
-			if tag == "p" || tag == "div" || tag == "h1" || tag == "h2" || tag == "h3" || tag == "li" || tag == "br" {
+			tag := strings.ToLower(elem.Name.Local)
+			if tag == "script" || tag == "style" || tag == "head" {
+				skip = true
+			} else if tag == "br" {
 				sb.WriteString("\n")
+			} else if tag == "h1" {
+				sb.WriteString("\n\n# ")
+			} else if tag == "h2" {
+				sb.WriteString("\n\n## ")
+			} else if tag == "h3" {
+				sb.WriteString("\n\n### ")
+			} else if tag == "p" || tag == "div" || tag == "li" {
+				sb.WriteString("\n\n")
 			}
 		case xml.EndElement:
-			tag := elem.Name.Local
-			if tag == "p" || tag == "div" || tag == "h1" || tag == "h2" || tag == "h3" || tag == "li" {
-				sb.WriteString("\n")
+			tag := strings.ToLower(elem.Name.Local)
+			if tag == "script" || tag == "style" || tag == "head" {
+				skip = false
 			}
 		case xml.CharData:
-			sb.WriteString(html.UnescapeString(string(elem)))
+			if !skip {
+				sb.WriteString(html.UnescapeString(string(elem)))
+			}
 		}
 	}
 	return strings.TrimSpace(sb.String())
@@ -405,7 +462,7 @@ func parseRTF(data []byte) string {
 			word := strings.ToLower(controlWord.String())
 			switch word {
 			case "par", "line", "sect":
-				sb.WriteString("\n")
+				sb.WriteString("\n\n")
 			case "tab":
 				sb.WriteString("\t")
 			case "fonttbl", "colortbl", "stylesheet", "info", "themedata", "xmlopen":
@@ -426,9 +483,6 @@ func parseRTF(data []byte) string {
 
 // --- PDF Parser ---
 
-// parsePDF extracts plain text from a PDF using dslipak/pdf, which correctly
-// resolves font encoding tables and ToUnicode CMaps — preventing the garbled
-// glyph-ID output that a raw stream extractor produces.
 func parsePDF(data []byte) (string, error) {
 	limit := len(data)
 	if limit > 1024 {
@@ -448,14 +502,10 @@ func parsePDF(data []byte) (string, error) {
 		return "", fmt.Errorf("extract pdf text: %w", err)
 	}
 
-	raw, err := io.ReadAll(textReader)
+	extracted, err := io.ReadAll(textReader)
 	if err != nil {
-		return "", fmt.Errorf("read pdf text: %w", err)
+		return "", fmt.Errorf("read extracted pdf text: %w", err)
 	}
 
-	result := strings.TrimSpace(string(raw))
-	if result == "" {
-		return "", fmt.Errorf("could not extract readable text from PDF")
-	}
-	return result, nil
+	return strings.TrimSpace(string(extracted)), nil
 }

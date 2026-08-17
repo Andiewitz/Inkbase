@@ -15,23 +15,70 @@ interface RichEditorProps {
   onResynced?: () => void;
 }
 
-/**
- * Converts plain text to minimal Tiptap-compatible HTML.
- * Splits on double newlines (paragraphs) and wraps each block.
- */
-function plainTextToHtml(text: string): string {
-  if (!text.trim()) return "<p></p>";
-  // If it already looks like HTML, pass through
-  if (text.trimStart().startsWith("<")) return text;
-
+function escapeHtml(text: string): string {
   return text
-    .split(/\n\n+/)
-    .map((block) => {
-      const trimmed = block.trim();
-      if (!trimmed) return "";
-      // Preserve single newlines inside paragraphs as <br>
-      const inner = trimmed.replace(/\n/g, "<br/>");
-      return `<p>${inner}</p>`;
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/**
+ * Converts structured text / markdown / plain text into Tiptap HTML
+ * without stripping indentation, tabs, headings, or paragraph spacing.
+ */
+function formatContentToHtml(content: string): string {
+  if (!content) return "<p></p>";
+
+  const trimmed = content.trim();
+  // If it already looks like HTML (from previous rich auto-save or rich import)
+  if (
+    trimmed.startsWith("<") &&
+    (trimmed.includes("</p>") ||
+      trimmed.includes("</h1>") ||
+      trimmed.includes("</h2>") ||
+      trimmed.includes("</h3>") ||
+      trimmed.includes("</div>") ||
+      trimmed.includes("<br"))
+  ) {
+    return content;
+  }
+
+  // Split on double newlines for paragraph boundaries
+  const blocks = content.split(/\r?\n\r?\n+/);
+
+  return blocks
+    .map((rawBlock) => {
+      if (!rawBlock) return "";
+
+      const trimmedStart = rawBlock.trimStart();
+
+      // Heading 1
+      if (trimmedStart.startsWith("# ")) {
+        return `<h1>${escapeHtml(trimmedStart.slice(2))}</h1>`;
+      }
+      // Heading 2
+      if (trimmedStart.startsWith("## ")) {
+        return `<h2>${escapeHtml(trimmedStart.slice(3))}</h2>`;
+      }
+      // Heading 3
+      if (trimmedStart.startsWith("### ")) {
+        return `<h3>${escapeHtml(trimmedStart.slice(4))}</h3>`;
+      }
+
+      // Regular paragraph — preserve leading tabs, 4-space indentation, and multiple spaces
+      const lines = rawBlock.split(/\r?\n/).map((line) => {
+        // Convert leading tabs to 4 non-breaking spaces
+        let formatted = line.replace(/^\t+/, (match) =>
+          "&nbsp;&nbsp;&nbsp;&nbsp;".repeat(match.length),
+        );
+        // Convert leading spaces (2+) to &nbsp;
+        formatted = formatted.replace(/^( +)/, (match) =>
+          "&nbsp;".repeat(match.length),
+        );
+        return escapeHtml(formatted);
+      });
+
+      return `<p>${lines.join("<br/>")}</p>`;
     })
     .filter(Boolean)
     .join("");
@@ -50,11 +97,15 @@ export function RichEditor({
     [onSaveStatusChange],
   );
 
+  const initialHtml = React.useMemo(() => {
+    return formatContentToHtml(initialContent);
+  }, [initialContent]);
+
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
-        // Disable features not needed for writing
         blockquote: false,
         code: false,
         codeBlock: false,
@@ -64,7 +115,7 @@ export function RichEditor({
         placeholder: "Start writing your manuscript...",
       }),
     ],
-    content: plainTextToHtml(initialContent),
+    content: initialHtml,
     editorProps: {
       attributes: {
         class: "prose-editor focus:outline-none",
@@ -82,7 +133,7 @@ export function RichEditor({
   const handleConflictResync = React.useCallback(
     (canonicalContent: string) => {
       if (editor) {
-        editor.commands.setContent(plainTextToHtml(canonicalContent));
+        editor.commands.setContent(formatContentToHtml(canonicalContent));
         onResynced?.();
       }
     },

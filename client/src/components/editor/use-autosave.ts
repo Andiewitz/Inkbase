@@ -18,6 +18,7 @@ interface LocalDraftBackup {
  * Robust debounced sync engine for the document editor.
  * Features:
  * - 1.5s keystroke debouncing to prevent server request flooding
+ * - Preserves rich HTML content, headings, bold/italics, lists, and indents
  * - In-flight mutex queue preventing overlapping concurrent saves
  * - Client-side timestamped local backup in localStorage
  * - Optimistic concurrency check (base_updated_at): server is source of truth
@@ -89,8 +90,9 @@ export function useAutoSave(
     saveLocalBackup(text, html);
 
     try {
+      // Save rich HTML so headings, bold, italics, spacing, lists, and indents are preserved!
       const payload: Record<string, any> = {
-        content: text,
+        content: html,
         word_count: text.split(/\s+/).filter(Boolean).length,
       };
 
