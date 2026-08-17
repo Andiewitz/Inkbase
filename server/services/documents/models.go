@@ -66,22 +66,22 @@ func NormalizeFormat(extOrMime string) (DocumentFormat, error) {
 }
 
 type BranchInfo struct {
-	Name           string `json:"name" dynamodbav:"name"`
-	IsEdit         bool   `json:"is_edit" dynamodbav:"is_edit"`
-	PendingChanges int    `json:"pending_changes" dynamodbav:"pending_changes"`
+	Name           string `json:"name"`
+	IsEdit         bool   `json:"is_edit"`
+	PendingChanges int    `json:"pending_changes"`
 }
 
 type Document struct {
-	ID        string         `json:"id" dynamodbav:"id"`
-	UserID    int64          `json:"user_id" dynamodbav:"user_id"`
-	Title     string         `json:"title" dynamodbav:"title"`
-	Content   string         `json:"content" dynamodbav:"content"`
-	Excerpt   string         `json:"excerpt" dynamodbav:"excerpt"`
-	WordCount int            `json:"word_count" dynamodbav:"word_count"`
-	Format    DocumentFormat `json:"format" dynamodbav:"format"`
-	Branch    BranchInfo     `json:"branch" dynamodbav:"branch"`
-	CreatedAt time.Time      `json:"created_at" dynamodbav:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at" dynamodbav:"updated_at"`
+	ID        string         `json:"id"`
+	UserID    int64          `json:"user_id"`
+	Title     string         `json:"title"`
+	Content   string         `json:"content"`
+	Excerpt   string         `json:"excerpt"`
+	WordCount int            `json:"word_count"`
+	Format    DocumentFormat `json:"format"`
+	Branch    BranchInfo     `json:"branch"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
 }
 
 // CalculateWordCount counts the words in a text body.
