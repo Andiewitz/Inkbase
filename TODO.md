@@ -236,8 +236,60 @@ Implement traffic-efficient client debouncing, server-authoritative optimistic c
 4. **GP4 — Zero-Data-Loss & Resync Integration Tests**. Write `server/tests/sync_conflict_test.go` and update `ratelimit_test.go`.
 5. **GP5 — Post-Mortem Documentation & Verification**. Write `docs/post-mortems/2026-08-17-rate-limiting-and-sync-resilience.md`, verify tests and build, and commit.
 
+---
 
+## 2026-08-17 — Total Overhaul of Spacing, Indentation & Import Formatting
 
+Preserve all spacing, paragraph breaks, indentation, headings, and rich formatting across document imports (DOCX, ODT, EPUB, RTF, PDF, MD, TXT), editor persistence (HTML preservation), and 1:1 card previews.
+
+### Goalposts
+1. **GP1 — Overhaul Document Parsers (`parse.go`)**. Update DOCX, ODT, EPUB, RTF, and PDF parsers to preserve double newline `\n\n` paragraph separation, heading styles, and tab/indentation stops.
+2. **GP2 — HTML-Preserving Client Auto-Save (`use-autosave.ts`)**. Save rich `editor.getHTML()` into `doc.content` instead of stripping all formatting with `editor.getText()`.
+3. **GP3 — Rich Text & Indentation Loader (`rich-editor.tsx`)**. Update `plainTextToHtml` to parse markdown headings, preserve leading indentation without trimming, and convert tabs/spaces into non-breaking format.
+4. **GP4 — 1:1 Miniature Card Previews (`paper-preview.tsx`)**. Render rich HTML formatting, headings, bold weights, and paragraph spacing inside document preview cards.
+5. **GP5 — Verification & Tests**. Add comprehensive parser and formatting tests in `server/tests/documents_test.go`, run full build and test suite, and commit.
+
+---
+
+## 2026-08-17 — Prepare for Railway deployment
+
+Prepare Inkbase to deploy on Railway with two services (nginx+Next web, Go API),
+Postgres plugin, and bundled nginx reverse proxy. Replaces the DynamoDB store
+with Postgres throughout.
+
+### Flagged issues surfaced during review
+
+1. **Critical — documents store crashes on boot without DynamoDB.** Resolved:
+   migrated to Postgres in GP1.
+2. **Security — `TRUST_PROXY` required.** Two-hop proxy (Railway edge + nginx)
+   means the rate limiter sees one IP for all clients without
+   `TRUST_PROXY=true`. Config-only; documented in `.env.example` and
+   `docs/railway.md`.
+3. **go.mod 1.25 vs docs/README 1.24.** Dockerfile pins `golang:1.25-alpine`;
+   docs corrected.
+4. **`docs/architecture.md` claims App Router; client is Pages Router.** Fixed.
+5. **Rate limiter is per-instance in-memory.** Fine for a single Railway
+   replica; needs a shared store if scaled beyond one instance. Deferred.
+
+### Goalposts
+1. **GP1 — Documents store refactor.** Split MemoryStore into `memory.go`,
+   add `postgres.go` (PostgresStore + idempotent schema migration), shrink
+   `db.go` to interface + factory, strip `dynamodbav` tags, `go mod tidy`
+   to drop all AWS SDK dependencies. Committed as
+   `8968869`.
+2. **GP2 — Postgres integration test.** New `tests/postgres_store_test.go`
+   gated on `INKBASE_TEST_POSTGRES`: full CRUD, migration idempotency, user
+   isolation. Committed as `5d5f520`.
+3. **GP3 — Server Dockerfile + env docs.** Multi-stage
+   `golang:1.25-alpine` → `alpine:3.20` runtime. Updated `.env.example`
+   with all production variables. Committed as `5d2752c`.
+4. **GP4 — Client Dockerfile (nginx + Next standalone).** `next.config.ts`
+   standalone output, nginx.conf.template (envsubst, `client_max_body_size
+   64m`, X-Forwarded-For headers), entrypoint.sh, multi-stage
+   `node:22-alpine` → `nginx:alpine` Dockerfile. Committed as `0345a07`.
+5. **GP5 — Docs.** New `docs/railway.md` (service wiring, variables,
+   local Docker run), fixed architecture.md App Router → Pages Router.
+   Committed with this entry.
 
 
 

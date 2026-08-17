@@ -13,7 +13,7 @@ Inkbase is a two-tier monorepo:
 
 ## Client (`client/`)
 
-- Next.js 16 (App Router, TypeScript, Tailwind CSS)
+- Next.js 16 (Pages Router, TypeScript, Tailwind CSS)
 - Heroicons for icons
 - `next.config.ts` rewrites `/api/:path*` to the Go server
   (default `http://localhost:8080`, override with `API_URL`)
