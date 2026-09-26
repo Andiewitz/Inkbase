@@ -15,21 +15,35 @@ import (
 	pdfread "github.com/dslipak/pdf"
 )
 
-// ParseDocument inspects filename extension or file content to extract structured text.
-func ParseDocument(filename string, r io.Reader) (string, error) {
-	data, err := io.ReadAll(r)
+// ParseDocument inspects filename extension or file content to extract
+// structured text, returning the extracted content and the detected format.
+// The input stream is bounded (maxImportBytes); archives are rejected before
+// decompression when they violate checkZipBounds. Any failure is explicit —
+// a failed import never yields a placeholder document.
+func ParseDocument(filename string, r io.Reader) (string, DocumentFormat, error) {
+	data, err := readBounded(r, maxImportBytes)
 	if err != nil {
-		return "", fmt.Errorf("read file data: %w", err)
+		return "", "", err
 	}
 
-	if len(data) == 0 {
-		return "", nil
+	if len(bytes.TrimSpace(data)) == 0 {
+		return "", "", ErrEmptyImport
+	}
+
+	// Archives expand on read: vet the container before touching entries.
+	if bytes.HasPrefix(data, []byte("PK\x03\x04")) {
+		if err := checkZipBounds(data); err != nil {
+			return "", "", err
+		}
 	}
 
 	ext := strings.ToLower(filepath.Ext(filename))
-	format, err := NormalizeFormat(ext)
-	if err != nil {
+	format, ferr := NormalizeFormat(ext)
+	if ferr != nil {
 		format = sniffFormat(data)
+	}
+	if format == "" {
+		return "", "", fmt.Errorf("%w: %s", ErrInvalidFormat, ext)
 	}
 
 	var content string
@@ -47,29 +61,18 @@ func ParseDocument(filename string, r io.Reader) (string, error) {
 	case FormatPDF:
 		content, err = parsePDF(data)
 	default:
-		if utf8.Valid(data) {
-			content = parsePlainText(data)
-		} else {
-			return "", fmt.Errorf("%w: %s", ErrInvalidFormat, ext)
-		}
+		return "", "", fmt.Errorf("%w: %s", ErrInvalidFormat, ext)
 	}
 
 	if err != nil {
-		if utf8.Valid(data) {
-			clean := parsePlainText(data)
-			if len(clean) > 0 {
-				return clean, nil
-			}
-		}
-		baseName := filepath.Base(filename)
-		return fmt.Sprintf("Imported from %s (%s format)", baseName, strings.ToUpper(string(format))), nil
+		return "", format, fmt.Errorf("%w: %s", ErrUnparseable, err)
 	}
 
 	cleanContent := strings.TrimSpace(content)
 	if cleanContent == "" {
-		cleanContent = fmt.Sprintf("Imported document: %s", filepath.Base(filename))
+		return "", format, ErrEmptyImport
 	}
-	return cleanContent, nil
+	return cleanContent, format, nil
 }
 
 func sniffFormat(data []byte) DocumentFormat {
@@ -311,14 +314,15 @@ func parseEPUB(data []byte) (string, error) {
 			if err != nil {
 				continue
 			}
-			htmlData, err := io.ReadAll(rc)
+			htmlData, err := readBounded(rc, maxChapterBytes)
 			rc.Close()
-			if err == nil {
-				text := extractHTMLText(htmlData)
-				if len(text) > 0 {
-					sb.WriteString(text)
-					sb.WriteString("\n\n")
-				}
+			if err != nil {
+				return "", err
+			}
+			text := extractHTMLText(htmlData)
+			if len(text) > 0 {
+				sb.WriteString(text)
+				sb.WriteString("\n\n")
 			}
 		}
 	}
@@ -502,7 +506,7 @@ func parsePDF(data []byte) (string, error) {
 		return "", fmt.Errorf("extract pdf text: %w", err)
 	}
 
-	extracted, err := io.ReadAll(textReader)
+	extracted, err := readBounded(textReader, maxImportBytes)
 	if err != nil {
 		return "", fmt.Errorf("read extracted pdf text: %w", err)
 	}

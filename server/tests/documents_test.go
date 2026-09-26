@@ -53,7 +53,7 @@ func TestDocumentFormats_Roundtrip(t *testing.T) {
 
 			// Parse it back
 			filename := "test." + string(fmtType)
-			extracted, err := documents.ParseDocument(filename, bytes.NewReader(data))
+			extracted, _, err := documents.ParseDocument(filename, bytes.NewReader(data))
 			if err != nil {
 				t.Fatalf("ParseDocument failed for %s: %v", fmtType, err)
 			}
@@ -299,7 +299,7 @@ func TestDocuments_API_Integration(t *testing.T) {
 func TestDocumentImport_FormattingAndIndentationPreserved(t *testing.T) {
 	// Test Plaintext / Markdown with indentation and headings
 	rawMD := "# Chapter 1: The Awakening\n\n\tIt was a dark and stormy night.\n\n    Four spaces of indentation on the second paragraph.\n\n## Section 1.1\n\nDialogue:\n\t\"Look at that,\" she whispered."
-	extractedMD, err := documents.ParseDocument("chapter1.md", strings.NewReader(rawMD))
+	extractedMD, _, err := documents.ParseDocument("chapter1.md", strings.NewReader(rawMD))
 	if err != nil {
 		t.Fatalf("Parse MD failed: %v", err)
 	}
@@ -316,7 +316,7 @@ func TestDocumentImport_FormattingAndIndentationPreserved(t *testing.T) {
 
 	// Test RTF with tabs and paragraph breaks
 	rawRTF := `{\rtf1\ansi\deff0 {\fonttbl{\f0 Times New Roman;}}\f0\fs24 # Heading Title\par\tab First paragraph with tab.\par\tab Second paragraph with tab.}`
-	extractedRTF, err := documents.ParseDocument("test.rtf", strings.NewReader(rawRTF))
+	extractedRTF, _, err := documents.ParseDocument("test.rtf", strings.NewReader(rawRTF))
 	if err != nil {
 		t.Fatalf("Parse RTF failed: %v", err)
 	}

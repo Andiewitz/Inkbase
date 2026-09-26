@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -11,6 +12,11 @@ import (
 	"inkbase/server/services/documents"
 	"inkbase/server/shared"
 )
+
+// maxImportBodyBytes caps the whole multipart upload body (file + overhead).
+// It sits above documents.maxImportBytes (10MB file cap) so legitimate
+// uploads never trip the transport limit first.
+const maxImportBodyBytes = 12 << 20
 
 func handleListDocuments(svc *documents.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -70,8 +76,10 @@ func handleImportDocument(svc *documents.Service) http.HandlerFunc {
 			return
 		}
 
-		// Parse multipart form up to 32MB
-		if err := r.ParseMultipartForm(32 << 20); err != nil {
+		// Bound the multipart body before parsing so a hostile upload cannot
+		// exhaust server memory at the transport layer.
+		r.Body = http.MaxBytesReader(w, r.Body, maxImportBodyBytes)
+		if err := r.ParseMultipartForm(maxImportBodyBytes); err != nil {
 			shared.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "could not parse file upload"})
 			return
 		}
@@ -88,12 +96,21 @@ func handleImportDocument(svc *documents.Service) http.HandlerFunc {
 			shared.WriteJSON(w, http.StatusForbidden, map[string]string{"error": err.Error()})
 			return
 		}
-		if errors.Is(err, documents.ErrInvalidFormat) {
+		if errors.Is(err, documents.ErrImportTooLarge) {
+			shared.WriteJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, documents.ErrInvalidFormat) ||
+			errors.Is(err, documents.ErrEmptyImport) ||
+			errors.Is(err, documents.ErrUnparseable) ||
+			errors.Is(err, documents.ErrTooManyEntries) ||
+			errors.Is(err, documents.ErrDecompressionBomb) {
 			shared.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 			return
 		}
 		if err != nil {
-			shared.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": fmt.Sprintf("could not import file: %v", err)})
+			log.Printf("import file: %v", err)
+			shared.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not import file"})
 			return
 		}
 

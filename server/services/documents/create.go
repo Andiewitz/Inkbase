@@ -62,6 +62,8 @@ func (s *Service) Create(ctx context.Context, userID int64, req CreateRequest) (
 }
 
 // Import parses an uploaded file stream and stores it as a new document.
+// Content and format come from a single bounded ParseDocument call: unknown
+// or corrupt input fails here with no document created — never a placeholder.
 func (s *Service) Import(ctx context.Context, userID int64, filename string, r io.Reader) (*Document, error) {
 	count, err := s.store.Count(ctx, userID)
 	if err != nil {
@@ -71,15 +73,9 @@ func (s *Service) Import(ctx context.Context, userID int64, filename string, r i
 		return nil, ErrStorageLimitReached
 	}
 
-	ext := strings.ToLower(filepath.Ext(filename))
-	format, err := NormalizeFormat(ext)
+	content, format, err := ParseDocument(filename, r)
 	if err != nil {
-		format = FormatTXT
-	}
-
-	content, err := ParseDocument(filename, r)
-	if err != nil {
-		return nil, fmt.Errorf("parse document: %w", err)
+		return nil, err
 	}
 
 	// Derive title from filename without extension
