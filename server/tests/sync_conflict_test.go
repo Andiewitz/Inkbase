@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -230,5 +232,70 @@ func TestHTTPUpdateConflictEndpoint(t *testing.T) {
 	}
 	if conflictResp.Document.Content != "Update 1 text." {
 		t.Errorf("Expected canonical content 'Update 1 text.', got '%s'", conflictResp.Document.Content)
+	}
+}
+
+// TestSyncConcurrentWritersSingleWinner proves the read-check-write race is
+// closed: N goroutines racing on one base revision produce exactly one winner
+// and N-1 conflicts, with the survivor fully persisted.
+func TestSyncConcurrentWritersSingleWinner(t *testing.T) {
+	ctx := context.Background()
+	store := documents.NewMemoryStore()
+	svc := documents.NewServiceWithStore(store)
+
+	const userID int64 = 424242
+
+	doc, err := svc.Create(ctx, userID, documents.CreateRequest{
+		Title:   "Race Doc",
+		Content: "base",
+	})
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+	time.Sleep(10 * time.Millisecond)
+	base := doc.UpdatedAt
+
+	const n = 20
+	start := make(chan struct{})
+	var wins atomic.Int64
+	var conflicts atomic.Int64
+	var wg sync.WaitGroup
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			<-start
+			content := fmt.Sprintf("writer-%d", i)
+			_, err := svc.Update(ctx, userID, doc.ID, documents.UpdateRequest{
+				Content:       strPtr(content),
+				BaseUpdatedAt: &base,
+			})
+			if err == nil {
+				wins.Add(1)
+			} else if err == documents.ErrDocumentConflict {
+				conflicts.Add(1)
+			} else {
+				t.Errorf("writer %d unexpected err: %v", i, err)
+			}
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+
+	if wins.Load() != 1 {
+		t.Fatalf("Expected exactly 1 winner, got %d", wins.Load())
+	}
+	if conflicts.Load() != n-1 {
+		t.Fatalf("Expected %d conflicts, got %d", n-1, conflicts.Load())
+	}
+	final, err := svc.Get(ctx, userID, doc.ID)
+	if err != nil {
+		t.Fatalf("Get final failed: %v", err)
+	}
+	if !strings.HasPrefix(final.Content, "writer-") {
+		t.Fatalf("Unexpected final content %q", final.Content)
+	}
+	if !final.UpdatedAt.After(base) {
+		t.Fatalf("Expected final UpdatedAt after base")
 	}
 }

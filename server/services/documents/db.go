@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 )
 
 // DocumentStore defines the persistence contract for manuscripts.
@@ -12,6 +13,10 @@ type DocumentStore interface {
 	Get(ctx context.Context, userID int64, docID string) (*Document, error)
 	List(ctx context.Context, userID int64) ([]*Document, error)
 	Update(ctx context.Context, doc *Document) error
+	// UpdateConditional atomically writes doc only if the stored revision
+	// is not newer than baseUpdatedAt. It returns ErrDocumentConflict when
+	// a newer revision exists and leaves storage unmutated.
+	UpdateConditional(ctx context.Context, doc *Document, baseUpdatedAt time.Time) error
 	Delete(ctx context.Context, userID int64, docID string) error
 	Count(ctx context.Context, userID int64) (int, error)
 }

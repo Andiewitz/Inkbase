@@ -15,18 +15,19 @@ type UpdateRequest struct {
 }
 
 // Update mutates an existing document, recalculating word count and excerpts if content is modified.
-// If BaseUpdatedAt is specified and the server document is newer, ErrDocumentConflict is returned
-// alongside the canonical server document so the client can resync without data loss.
+// When BaseUpdatedAt is set, the write is conditional and atomic: the store
+// commits only if no newer revision exists. A stale base returns
+// ErrDocumentConflict alongside the canonical server document, which is left
+// unmutated. A nil base preserves legacy back-compat overwrite.
 func (s *Service) Update(ctx context.Context, userID int64, docID string, req UpdateRequest) (*Document, error) {
 	doc, err := s.store.Get(ctx, userID, docID)
 	if err != nil {
 		return nil, err
 	}
 
-	if req.BaseUpdatedAt != nil && !req.BaseUpdatedAt.IsZero() {
-		if doc.UpdatedAt.UTC().After(req.BaseUpdatedAt.UTC()) {
-			return doc, ErrDocumentConflict
-		}
+	hasBase := req.BaseUpdatedAt != nil && !req.BaseUpdatedAt.IsZero()
+	if hasBase && doc.UpdatedAt.UTC().After(req.BaseUpdatedAt.UTC()) {
+		return doc, ErrDocumentConflict
 	}
 
 	if req.Title != nil {
@@ -51,6 +52,20 @@ func (s *Service) Update(ctx context.Context, userID int64, docID string, req Up
 	}
 
 	doc.UpdatedAt = time.Now().UTC()
+
+	if hasBase {
+		if err := s.store.UpdateConditional(ctx, doc, *req.BaseUpdatedAt); err != nil {
+			if err == ErrDocumentConflict {
+				current, getErr := s.store.Get(ctx, userID, docID)
+				if getErr != nil {
+					return nil, getErr
+				}
+				return current, ErrDocumentConflict
+			}
+			return nil, err
+		}
+		return doc, nil
+	}
 
 	if err := s.store.Update(ctx, doc); err != nil {
 		return nil, err

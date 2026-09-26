@@ -129,6 +129,28 @@ func (m *MemoryStore) Update(ctx context.Context, doc *Document) error {
 	return nil
 }
 
+// UpdateConditional atomically checks the stored UpdatedAt against the base
+// under the write lock, so concurrent writers on one base cannot both win.
+func (m *MemoryStore) UpdateConditional(ctx context.Context, doc *Document, baseUpdatedAt time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	userMap, ok := m.docs[doc.UserID]
+	if !ok {
+		return ErrDocumentNotFound
+	}
+	stored, ok := userMap[doc.ID]
+	if !ok {
+		return ErrDocumentNotFound
+	}
+	if stored.UpdatedAt.UTC().After(baseUpdatedAt.UTC()) {
+		return ErrDocumentConflict
+	}
+	cp := *doc
+	userMap[doc.ID] = &cp
+	return nil
+}
+
 func (m *MemoryStore) Delete(ctx context.Context, userID int64, docID string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
