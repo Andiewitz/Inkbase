@@ -11,7 +11,8 @@ import (
 type DocumentStore interface {
 	Create(ctx context.Context, doc *Document) error
 	Get(ctx context.Context, userID int64, docID string) (*Document, error)
-	List(ctx context.Context, userID int64) ([]*Document, error)
+	// ListMeta returns card-grid metadata without document bodies.
+	ListMeta(ctx context.Context, userID int64) ([]*DocumentMeta, error)
 	Update(ctx context.Context, doc *Document) error
 	// UpdateConditional atomically writes doc only if the stored revision
 	// is not newer than baseUpdatedAt. It returns ErrDocumentConflict when

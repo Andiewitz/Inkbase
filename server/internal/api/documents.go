@@ -26,7 +26,7 @@ func handleListDocuments(svc *documents.Service) http.HandlerFunc {
 			return
 		}
 
-		docs, err := svc.List(r.Context(), userID)
+		docs, err := svc.ListMeta(r.Context(), userID)
 		if err != nil {
 			shared.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not list documents"})
 			return

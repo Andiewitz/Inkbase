@@ -116,7 +116,7 @@ func TestDocumentService_CRUD_And_TierLimits(t *testing.T) {
 	}
 
 	// 3. List docs
-	list, err := svc.List(ctx, userID)
+	list, err := svc.ListMeta(ctx, userID)
 	if err != nil {
 		t.Fatalf("List: %v", err)
 	}
@@ -257,8 +257,8 @@ func TestDocuments_API_Integration(t *testing.T) {
 	}
 
 	var listData struct {
-		Documents []documents.Document `json:"documents"`
-		Limit     int                  `json:"limit"`
+		Documents []documents.DocumentMeta `json:"documents"`
+		Limit     int                      `json:"limit"`
 	}
 	json.NewDecoder(listResp.Body).Decode(&listData)
 	listResp.Body.Close()

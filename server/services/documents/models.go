@@ -84,6 +84,37 @@ type Document struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 }
 
+// DocumentMeta is the card-grid projection of a Document: everything except
+// the full body. List endpoints return metas so dashboard reads never pay
+// for bodies; the body is fetched via Get. The absence of Content is a
+// compile-time guarantee, not a convention.
+type DocumentMeta struct {
+	ID        string         `json:"id"`
+	UserID    int64          `json:"user_id"`
+	Title     string         `json:"title"`
+	Excerpt   string         `json:"excerpt"`
+	WordCount int            `json:"word_count"`
+	Format    DocumentFormat `json:"format"`
+	Branch    BranchInfo     `json:"branch"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+}
+
+// MetaOf projects a full Document to its metadata form.
+func MetaOf(doc *Document) *DocumentMeta {
+	return &DocumentMeta{
+		ID:        doc.ID,
+		UserID:    doc.UserID,
+		Title:     doc.Title,
+		Excerpt:   doc.Excerpt,
+		WordCount: doc.WordCount,
+		Format:    doc.Format,
+		Branch:    doc.Branch,
+		CreatedAt: doc.CreatedAt,
+		UpdatedAt: doc.UpdatedAt,
+	}
+}
+
 // CalculateWordCount counts the words in a text body.
 func CalculateWordCount(text string) int {
 	fields := strings.Fields(text)

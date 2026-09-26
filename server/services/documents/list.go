@@ -4,7 +4,8 @@ import (
 	"context"
 )
 
-// List retrieves all manuscripts owned by the authenticated user.
-func (s *Service) List(ctx context.Context, userID int64) ([]*Document, error) {
-	return s.store.List(ctx, userID)
+// ListMeta retrieves metadata (no bodies) for all manuscripts owned by the
+// authenticated user. Card grids use this; bodies come from Get.
+func (s *Service) ListMeta(ctx context.Context, userID int64) ([]*DocumentMeta, error) {
+	return s.store.ListMeta(ctx, userID)
 }

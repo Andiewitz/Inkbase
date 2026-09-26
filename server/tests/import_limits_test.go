@@ -56,7 +56,7 @@ func TestImportRejectsOversizedFile(t *testing.T) {
 	if !errors.Is(err, documents.ErrImportTooLarge) {
 		t.Fatalf("expected ErrImportTooLarge, got %v", err)
 	}
-	if n, _ := svc.List(context.Background(), userID); len(n) != 0 {
+	if n, _ := svc.ListMeta(context.Background(), userID); len(n) != 0 {
 		t.Fatalf("oversized import created %d documents", len(n))
 	}
 }
@@ -73,7 +73,7 @@ func TestImportRejectsDecompressionBomb(t *testing.T) {
 	if !errors.Is(err, documents.ErrDecompressionBomb) {
 		t.Fatalf("expected ErrDecompressionBomb, got %v", err)
 	}
-	if n, _ := svc.List(context.Background(), userID); len(n) != 0 {
+	if n, _ := svc.ListMeta(context.Background(), userID); len(n) != 0 {
 		t.Fatalf("bomb import created %d documents", len(n))
 	}
 }
@@ -91,7 +91,7 @@ func TestImportRejectsTooManyEntries(t *testing.T) {
 	if !errors.Is(err, documents.ErrTooManyEntries) {
 		t.Fatalf("expected ErrTooManyEntries, got %v", err)
 	}
-	if n, _ := svc.List(context.Background(), userID); len(n) != 0 {
+	if n, _ := svc.ListMeta(context.Background(), userID); len(n) != 0 {
 		t.Fatalf("bulk import created %d documents", len(n))
 	}
 }
@@ -106,7 +106,7 @@ func TestImportRejectsCorruptArchive(t *testing.T) {
 	if !errors.Is(err, documents.ErrUnparseable) {
 		t.Fatalf("expected ErrUnparseable, got %v", err)
 	}
-	if n, _ := svc.List(context.Background(), userID); len(n) != 0 {
+	if n, _ := svc.ListMeta(context.Background(), userID); len(n) != 0 {
 		t.Fatalf("corrupt import created %d documents", len(n))
 	}
 }
@@ -119,7 +119,7 @@ func TestImportRejectsEmptyFile(t *testing.T) {
 	if !errors.Is(err, documents.ErrEmptyImport) {
 		t.Fatalf("expected ErrEmptyImport, got %v", err)
 	}
-	if n, _ := svc.List(context.Background(), userID); len(n) != 0 {
+	if n, _ := svc.ListMeta(context.Background(), userID); len(n) != 0 {
 		t.Fatalf("empty import created %d documents", len(n))
 	}
 }
@@ -133,7 +133,7 @@ func TestImportRejectsUnknownBinaryFormat(t *testing.T) {
 	if !errors.Is(err, documents.ErrInvalidFormat) {
 		t.Fatalf("expected ErrInvalidFormat, got %v", err)
 	}
-	if n, _ := svc.List(context.Background(), userID); len(n) != 0 {
+	if n, _ := svc.ListMeta(context.Background(), userID); len(n) != 0 {
 		t.Fatalf("binary import created %d documents", len(n))
 	}
 }

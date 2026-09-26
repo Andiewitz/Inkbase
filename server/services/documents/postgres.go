@@ -95,9 +95,9 @@ func (s *PostgresStore) Get(ctx context.Context, userID int64, docID string) (*D
 	return &doc, nil
 }
 
-func (s *PostgresStore) List(ctx context.Context, userID int64) ([]*Document, error) {
+func (s *PostgresStore) ListMeta(ctx context.Context, userID int64) ([]*DocumentMeta, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT user_id, id, title, content, excerpt, word_count, format, branch, created_at, updated_at
+		`SELECT user_id, id, title, excerpt, word_count, format, branch, created_at, updated_at
 		 FROM documents WHERE user_id = $1 ORDER BY updated_at DESC`,
 		userID,
 	)
@@ -106,21 +106,21 @@ func (s *PostgresStore) List(ctx context.Context, userID int64) ([]*Document, er
 	}
 	defer rows.Close()
 
-	var docs []*Document
+	var docs []*DocumentMeta
 	for rows.Next() {
-		var doc Document
+		var meta DocumentMeta
 		var branchJSON []byte
 		if err := rows.Scan(
-			&doc.UserID, &doc.ID, &doc.Title, &doc.Content, &doc.Excerpt,
-			&doc.WordCount, &doc.Format, &branchJSON,
-			&doc.CreatedAt, &doc.UpdatedAt,
+			&meta.UserID, &meta.ID, &meta.Title, &meta.Excerpt,
+			&meta.WordCount, &meta.Format, &branchJSON,
+			&meta.CreatedAt, &meta.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan document: %w", err)
 		}
-		if err := json.Unmarshal(branchJSON, &doc.Branch); err != nil {
+		if err := json.Unmarshal(branchJSON, &meta.Branch); err != nil {
 			return nil, fmt.Errorf("unmarshal branch: %w", err)
 		}
-		docs = append(docs, &doc)
+		docs = append(docs, &meta)
 	}
 	return docs, rows.Err()
 }

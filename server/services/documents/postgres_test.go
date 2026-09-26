@@ -92,7 +92,7 @@ func TestPostgresStoreCRUD(t *testing.T) {
 			t.Fatalf("Create doc2: %v", err)
 		}
 
-		docs, err := store.List(ctx, userID)
+		docs, err := store.ListMeta(ctx, userID)
 		if err != nil {
 			t.Fatalf("List: %v", err)
 		}

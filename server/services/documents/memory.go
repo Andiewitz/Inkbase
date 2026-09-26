@@ -94,18 +94,18 @@ func (m *MemoryStore) Get(ctx context.Context, userID int64, docID string) (*Doc
 	return &cp, nil
 }
 
-func (m *MemoryStore) List(ctx context.Context, userID int64) ([]*Document, error) {
+func (m *MemoryStore) ListMeta(ctx context.Context, userID int64) ([]*DocumentMeta, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	userMap, ok := m.docs[userID]
 	if !ok {
-		return []*Document{}, nil
+		return []*DocumentMeta{}, nil
 	}
-	list := make([]*Document, 0, len(userMap))
+	list := make([]*DocumentMeta, 0, len(userMap))
 	for _, doc := range userMap {
 		cp := *doc
-		list = append(list, &cp)
+		list = append(list, MetaOf(&cp))
 	}
 	sort.Slice(list, func(i, j int) bool {
 		return list[i].UpdatedAt.After(list[j].UpdatedAt)
