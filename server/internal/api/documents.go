@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"path/filepath"
 	"strings"
 
 	"inkbase/server/services/documents"
@@ -302,17 +301,49 @@ func handleExportDocument(svc *documents.Service) http.HandlerFunc {
 
 		data, contentType, err := documents.ExportDocument(doc, format)
 		if err != nil {
-			shared.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": fmt.Sprintf("export error: %v", err)})
+			log.Printf("export document: %v", err)
+			shared.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not export document"})
 			return
 		}
 
-		safeTitle := strings.ReplaceAll(doc.Title, " ", "_")
-		safeTitle = filepath.Clean(safeTitle)
-		filename := fmt.Sprintf("%s.%s", safeTitle, format)
+		filename := fmt.Sprintf("%s.%s", sanitizeExportFilename(doc.Title, doc.ID), format)
 
 		w.Header().Set("Content-Type", contentType)
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(data)
 	}
+}
+
+// sanitizeExportFilename maps an arbitrary document title to a safe
+// attachment filename stem: alphanumerics, dash and underscore survive;
+// every other rune run collapses to a single underscore; output is capped
+// at 80 runes with no leading/trailing underscores. An empty result falls
+// back to fallbackID (the document id). The result never carries path
+// separators, quotes, or control characters, so it is safe to embed in a
+// Content-Disposition header.
+func sanitizeExportFilename(title, fallbackID string) string {
+	const maxStemRunes = 80
+	var sb strings.Builder
+	prevUnderscore := true // collapse leading runs: no leading underscore
+	runes := 0
+	for _, r := range title {
+		if runes >= maxStemRunes {
+			break
+		}
+		if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_' {
+			sb.WriteRune(r)
+			prevUnderscore = false
+			runes++
+		} else if !prevUnderscore {
+			sb.WriteRune('_')
+			prevUnderscore = true
+			runes++
+		}
+	}
+	out := strings.Trim(sb.String(), "_")
+	if out == "" {
+		return fallbackID
+	}
+	return out
 }
