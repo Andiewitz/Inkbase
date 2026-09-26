@@ -10,6 +10,11 @@ import (
 // DocumentStore defines the persistence contract for manuscripts.
 type DocumentStore interface {
 	Create(ctx context.Context, doc *Document) error
+	// CreateCapped inserts doc only while the user holds fewer than limit
+	// active documents. Check and insert are atomic per store, so
+	// concurrent creators cannot overshoot the quota; over-limit yields
+	// ErrStorageLimitReached and inserts nothing.
+	CreateCapped(ctx context.Context, doc *Document, limit int) error
 	Get(ctx context.Context, userID int64, docID string) (*Document, error)
 	// ListMeta returns card-grid metadata without document bodies.
 	ListMeta(ctx context.Context, userID int64) ([]*DocumentMeta, error)

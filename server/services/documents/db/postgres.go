@@ -76,6 +76,55 @@ func (s *PostgresStore) Create(ctx context.Context, doc *Document) error {
 	return nil
 }
 
+// CreateCapped counts and inserts inside one transaction serialized per user
+// with an advisory lock. COUNT alone cannot lock phantom rows, so without
+// the lock two concurrent creators could both observe room and overshoot.
+func (s *PostgresStore) CreateCapped(ctx context.Context, doc *Document, limit int) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin capped create tx: %w", err)
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+
+	if _, err := tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock($1)`, doc.UserID); err != nil {
+		return fmt.Errorf("acquire quota lock: %w", err)
+	}
+	var n int
+	if err := tx.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM documents WHERE user_id = $1 AND deleted_at IS NULL`,
+		doc.UserID,
+	).Scan(&n); err != nil {
+		return fmt.Errorf("count documents: %w", err)
+	}
+	if n >= limit {
+		return ErrStorageLimitReached
+	}
+
+	branchJSON, err := json.Marshal(doc.Branch)
+	if err != nil {
+		return fmt.Errorf("marshal branch: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO documents (user_id, id, title, content, excerpt, word_count, format, branch, created_at, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+		doc.UserID, doc.ID, doc.Title, doc.Content, doc.Excerpt,
+		doc.WordCount, string(doc.Format), branchJSON,
+		doc.CreatedAt, doc.UpdatedAt,
+	); err != nil {
+		return fmt.Errorf("insert document: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit capped create: %w", err)
+	}
+	committed = true
+	return nil
+}
+
 func (s *PostgresStore) Get(ctx context.Context, userID int64, docID string) (*Document, error) {
 	var doc Document
 	var branchJSON []byte

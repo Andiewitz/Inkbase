@@ -2,6 +2,7 @@ package documents
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -18,18 +19,12 @@ type CreateRequest struct {
 }
 
 // Create generates a new document for the user, enforcing the free tier limit.
+// The quota check and insert are atomic in the store (CreateCapped), so
+// concurrent creators cannot overshoot the limit.
 func (s *Service) Create(ctx context.Context, userID int64, req CreateRequest) (*Document, error) {
 	title := strings.TrimSpace(req.Title)
 	if title == "" {
 		title = "Untitled Manuscript"
-	}
-
-	count, err := s.store.Count(ctx, userID)
-	if err != nil {
-		return nil, fmt.Errorf("check document limit: %w", err)
-	}
-	if count >= FreeTierLimit {
-		return nil, ErrStorageLimitReached
 	}
 
 	format := req.Format
@@ -55,7 +50,10 @@ func (s *Service) Create(ctx context.Context, userID int64, req CreateRequest) (
 		UpdatedAt: now,
 	}
 
-	if err := s.store.Create(ctx, doc); err != nil {
+	if err := s.store.CreateCapped(ctx, doc, FreeTierLimit); err != nil {
+		if errors.Is(err, ErrStorageLimitReached) {
+			return nil, err
+		}
 		return nil, fmt.Errorf("create document: %w", err)
 	}
 	return doc, nil
@@ -64,15 +62,8 @@ func (s *Service) Create(ctx context.Context, userID int64, req CreateRequest) (
 // Import parses an uploaded file stream and stores it as a new document.
 // Content and format come from a single bounded ParseDocument call: unknown
 // or corrupt input fails here with no document created — never a placeholder.
+// Quota is enforced atomically at insert time (CreateCapped).
 func (s *Service) Import(ctx context.Context, userID int64, filename string, r io.Reader) (*Document, error) {
-	count, err := s.store.Count(ctx, userID)
-	if err != nil {
-		return nil, fmt.Errorf("check document limit: %w", err)
-	}
-	if count >= FreeTierLimit {
-		return nil, ErrStorageLimitReached
-	}
-
 	content, format, err := ParseDocument(filename, r)
 	if err != nil {
 		return nil, err
@@ -103,7 +94,10 @@ func (s *Service) Import(ctx context.Context, userID int64, filename string, r i
 		UpdatedAt: now,
 	}
 
-	if err := s.store.Create(ctx, doc); err != nil {
+	if err := s.store.CreateCapped(ctx, doc, FreeTierLimit); err != nil {
+		if errors.Is(err, ErrStorageLimitReached) {
+			return nil, err
+		}
 		return nil, fmt.Errorf("save imported document: %w", err)
 	}
 	return doc, nil

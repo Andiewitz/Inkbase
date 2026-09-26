@@ -2,6 +2,7 @@ package docdb
 
 import (
 	"context"
+	"os"
 	"sort"
 	"sync"
 	"time"
@@ -14,7 +15,20 @@ type MemoryStore struct {
 	docs map[int64]map[string]*Document
 }
 
+// NewMemoryStore returns an empty store. Demo manuscripts are seeded only
+// when SEED_DEMO=1 (local dev via scripts/dev.sh) so tests and fresh
+// environments start hermetic instead of inheriting user-1 fixtures that
+// also eat into the free-tier quota.
 func NewMemoryStore() *MemoryStore {
+	ms := &MemoryStore{docs: make(map[int64]map[string]*Document)}
+	if os.Getenv("SEED_DEMO") == "1" {
+		ms.seedDemo()
+	}
+	return ms
+}
+
+// seedDemo installs the two sample manuscripts for local development.
+func (m *MemoryStore) seedDemo() {
 	now := time.Now()
 	doc1 := &Document{
 		ID:        "doc-dev-1",
@@ -55,13 +69,7 @@ func NewMemoryStore() *MemoryStore {
 		doc2.ID: doc2,
 	}
 
-	docs := map[int64]map[string]*Document{
-		1: userMap,
-	}
-
-	return &MemoryStore{
-		docs: docs,
-	}
+	m.docs[1] = userMap
 }
 
 func (m *MemoryStore) Create(ctx context.Context, doc *Document) error {
@@ -72,6 +80,31 @@ func (m *MemoryStore) Create(ctx context.Context, doc *Document) error {
 	if !ok {
 		userMap = make(map[string]*Document)
 		m.docs[doc.UserID] = userMap
+	}
+	cp := *doc
+	userMap[doc.ID] = &cp
+	return nil
+}
+
+// CreateCapped counts active documents and inserts under the single write
+// lock, closing the check-then-act race between concurrent creators.
+func (m *MemoryStore) CreateCapped(ctx context.Context, doc *Document, limit int) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	userMap, ok := m.docs[doc.UserID]
+	if !ok {
+		userMap = make(map[string]*Document)
+		m.docs[doc.UserID] = userMap
+	}
+	active := 0
+	for _, d := range userMap {
+		if d.DeletedAt == nil {
+			active++
+		}
+	}
+	if active >= limit {
+		return ErrStorageLimitReached
 	}
 	cp := *doc
 	userMap[doc.ID] = &cp
