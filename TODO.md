@@ -329,5 +329,14 @@ Work is commit-per-issue on `main` with green `go test ./...` + client
 11. **GP10 — Post-mortem + push.** Write `docs/post-mortems/2026-09-26-document-fixes.md`,
     link in `docs/README.md`, push `main`, final walkthrough.
 
+### Completion (2026-09-26)
+
+All goalposts shipped as commits `8574694`–`d9699ef` plus the post-mortem
+commit on `main`, pushed to `origin/main`. Deviations: generic import-error
+mapping landed in GP3 (not GP7); playwright dedupe scoped out (duplicate
+lives on `feature/new-branch`). Known open items (rate-limiter timing
+flakes, landing WIP stash, pre-existing lint noise) recorded in the
+post-mortem for owner decision — none silently worked around.
+
 
 
