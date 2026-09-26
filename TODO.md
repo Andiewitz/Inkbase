@@ -288,8 +288,46 @@ with Postgres throughout.
    64m`, X-Forwarded-For headers), entrypoint.sh, multi-stage
    `node:22-alpine` → `nginx:alpine` Dockerfile. Committed as `0345a07`.
 5. **GP5 — Docs.** New `docs/railway.md` (service wiring, variables,
-   local Docker run), fixed architecture.md App Router → Pages Router.
-   Committed with this entry.
+    local Docker run), fixed architecture.md App Router → Pages Router.
+    Committed with this entry.
+
+---
+
+## 2026-09-26 — Remediate flagged document/integrity issues per audit
+
+Fix all 9 flagged areas from the 2026-09-26 full-repo audit (high-level map):
+non-atomic OCC, destructive 409 recovery, unbounded import + placeholder
+success, full-body list, hard delete, documents DB outside db/, export
+filename + error disclosure, free-tier check-then-act + seeded MemoryStore,
+and repo hygiene (boundaries table, Go version drift, duplicate playwright).
+Detailed reasoning and per-commit breakdown live in `docs/plan.md`.
+Work is commit-per-issue on `main` with green `go test ./...` + client
+`lint`/`build` per goalpost, pushed to `main`, closed with a post-mortem in
+`docs/post-mortems/`.
+
+### Goalposts
+
+1. **GP0 — Plan + trail.** Create `docs/plan.md`, append this entry.
+2. **GP1 — Atomic CAS updates.** Conditional write in `update.go` /
+   `postgres.go` / `memory.go`; parallel-writer test (1 win, N-1 conflicts).
+3. **GP2 — Non-destructive conflict recovery.** Keep local backup on 409;
+   new `conflict-resolve.tsx`; editor applies only user-chosen result.
+4. **GP3 — Bounded safe import.** `validate-import.go` limits, no placeholder
+   docs, strict format rejection, handler `MaxBytesReader`.
+5. **GP4 — Metadata-only list.** List excludes `content`; dashboard uses
+   excerpt; `Get` still returns body.
+6. **GP5 — Recoverable trash/restore.** `trash.go` / `restore.go`,
+   `deleted_at` filtering, owner-scoped restore endpoint.
+7. **GP6 — Persistence to db/.** Move documents stores under
+   `services/documents/db/`; no behavior change.
+8. **GP7 — Export + error hardening.** Sanitized filenames, generic import
+   errors (detail logged server-side).
+9. **GP8 — Quota + seed gating.** Transactional limit check; seeds only when
+   `SEED_DEMO=1`.
+10. **GP9 — Hygiene.** Boundaries table + Go version docs, dedupe
+    `@playwright/test`.
+11. **GP10 — Post-mortem + push.** Write `docs/post-mortems/2026-09-26-document-fixes.md`,
+    link in `docs/README.md`, push `main`, final walkthrough.
 
 
 
