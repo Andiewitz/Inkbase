@@ -209,6 +209,7 @@ Concretely:
 | Folder | Domain | DB |
 |---|---|---|
 | `services/auth` | Registration, login, JWT signing/verification | `users` table |
+| `services/documents` | Manuscripts CRUD, import/export, trash/restore (persistence in `db/`) | `documents` table |
 | `services/health` | Liveness check (no DB) | — |
 
 ---

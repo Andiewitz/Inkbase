@@ -6,7 +6,7 @@ Monorepo for Inkbase.
 
 ```
 client/    Next.js 16 + Tailwind CSS + Heroicons frontend
-server/    Go 1.24 backend (net/http JSON API)
+server/    Go 1.25 backend (net/http JSON API)
 docs/      project documentation
 scripts/   developer tooling
 ```
@@ -14,7 +14,7 @@ scripts/   developer tooling
 ## Prerequisites
 
 - Node.js 20+ and npm
-- Go 1.24+
+- Go 1.25+
 
 ## Quick start
 

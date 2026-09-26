@@ -5,7 +5,7 @@ Inkbase is a two-tier monorepo:
 ```
 ┌──────────────────┐      /api/*      ┌──────────────────┐
 │      client      │ ───────────────▶ │      server      │
-│  Next.js 16 +    │    (dev proxy)   │      Go 1.24     │
+│  Next.js 16 +    │    (dev proxy)   │      Go 1.25     │
 │  Tailwind +      │                  │  net/http        │
 │  Heroicons       │ ◀─────────────── │  JSON API        │
 └──────────────────┘                  └──────────────────┘
@@ -20,7 +20,7 @@ Inkbase is a two-tier monorepo:
 
 ## Server (`server/`)
 
-- Go 1.24 stdlib `net/http` with the enhanced `ServeMux` routing
+- Go 1.25 stdlib `net/http` with the enhanced `ServeMux` routing
 - Entrypoint: `cmd/api/main.go`
 - Handlers: `internal/api/`
 
