@@ -48,6 +48,12 @@ func migrateDocuments(db *sql.DB) error {
 			PRIMARY KEY (user_id, id)
 		)
 	`)
+	if err != nil {
+		return err
+	}
+	// Recoverable trash: NULL = active. Separate statement for idempotency
+	// on databases created before this column existed.
+	_, err = db.Exec(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ NULL`)
 	return err
 }
 
@@ -76,7 +82,7 @@ func (s *PostgresStore) Get(ctx context.Context, userID int64, docID string) (*D
 
 	err := s.db.QueryRowContext(ctx,
 		`SELECT user_id, id, title, content, excerpt, word_count, format, branch, created_at, updated_at
-		 FROM documents WHERE user_id = $1 AND id = $2`,
+		 FROM documents WHERE user_id = $1 AND id = $2 AND deleted_at IS NULL`,
 		userID, docID,
 	).Scan(
 		&doc.UserID, &doc.ID, &doc.Title, &doc.Content, &doc.Excerpt,
@@ -98,7 +104,7 @@ func (s *PostgresStore) Get(ctx context.Context, userID int64, docID string) (*D
 func (s *PostgresStore) ListMeta(ctx context.Context, userID int64) ([]*DocumentMeta, error) {
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT user_id, id, title, excerpt, word_count, format, branch, created_at, updated_at
-		 FROM documents WHERE user_id = $1 ORDER BY updated_at DESC`,
+		 FROM documents WHERE user_id = $1 AND deleted_at IS NULL ORDER BY updated_at DESC`,
 		userID,
 	)
 	if err != nil {
@@ -135,7 +141,7 @@ func (s *PostgresStore) Update(ctx context.Context, doc *Document) error {
 		`UPDATE documents
 		 SET title = $3, content = $4, excerpt = $5, word_count = $6,
 		     format = $7, branch = $8, updated_at = $9
-		 WHERE user_id = $1 AND id = $2`,
+		 WHERE user_id = $1 AND id = $2 AND deleted_at IS NULL`,
 		doc.UserID, doc.ID, doc.Title, doc.Content, doc.Excerpt,
 		doc.WordCount, string(doc.Format), branchJSON,
 		doc.UpdatedAt,
@@ -171,7 +177,7 @@ func (s *PostgresStore) UpdateConditional(ctx context.Context, doc *Document, ba
 
 	var storedUpdatedAt time.Time
 	err = tx.QueryRowContext(ctx,
-		`SELECT updated_at FROM documents WHERE user_id = $1 AND id = $2 FOR UPDATE`,
+		`SELECT updated_at FROM documents WHERE user_id = $1 AND id = $2 AND deleted_at IS NULL FOR UPDATE`,
 		doc.UserID, doc.ID,
 	).Scan(&storedUpdatedAt)
 	if err == sql.ErrNoRows {
@@ -216,19 +222,71 @@ func (s *PostgresStore) UpdateConditional(ctx context.Context, doc *Document, ba
 
 func (s *PostgresStore) Delete(ctx context.Context, userID int64, docID string) error {
 	_, err := s.db.ExecContext(ctx,
-		`DELETE FROM documents WHERE user_id = $1 AND id = $2`,
+		`UPDATE documents SET deleted_at = now() WHERE user_id = $1 AND id = $2 AND deleted_at IS NULL`,
 		userID, docID,
 	)
 	if err != nil {
-		return fmt.Errorf("delete document: %w", err)
+		return fmt.Errorf("trash document: %w", err)
 	}
 	return nil
+}
+
+// Restore clears the trash mark and returns the document. Missing documents
+// yield ErrDocumentNotFound; active documents are returned unchanged.
+func (s *PostgresStore) Restore(ctx context.Context, userID int64, docID string) (*Document, error) {
+	result, err := s.db.ExecContext(ctx,
+		`UPDATE documents SET deleted_at = NULL WHERE user_id = $1 AND id = $2 AND deleted_at IS NOT NULL`,
+		userID, docID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("restore document: %w", err)
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return nil, fmt.Errorf("rows affected: %w", err)
+	}
+	if n == 0 {
+		// Either already active (idempotent success) or missing.
+		return s.Get(ctx, userID, docID)
+	}
+	return s.Get(ctx, userID, docID)
+}
+
+// ListTrash returns metadata of trashed documents, newest trash first.
+func (s *PostgresStore) ListTrash(ctx context.Context, userID int64) ([]*DocumentMeta, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT user_id, id, title, excerpt, word_count, format, branch, created_at, updated_at
+		 FROM documents WHERE user_id = $1 AND deleted_at IS NOT NULL ORDER BY deleted_at DESC`,
+		userID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list trash: %w", err)
+	}
+	defer rows.Close()
+
+	var docs []*DocumentMeta
+	for rows.Next() {
+		var meta DocumentMeta
+		var branchJSON []byte
+		if err := rows.Scan(
+			&meta.UserID, &meta.ID, &meta.Title, &meta.Excerpt,
+			&meta.WordCount, &meta.Format, &branchJSON,
+			&meta.CreatedAt, &meta.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan document: %w", err)
+		}
+		if err := json.Unmarshal(branchJSON, &meta.Branch); err != nil {
+			return nil, fmt.Errorf("unmarshal branch: %w", err)
+		}
+		docs = append(docs, &meta)
+	}
+	return docs, rows.Err()
 }
 
 func (s *PostgresStore) Count(ctx context.Context, userID int64) (int, error) {
 	var n int
 	err := s.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM documents WHERE user_id = $1`,
+		`SELECT COUNT(*) FROM documents WHERE user_id = $1 AND deleted_at IS NULL`,
 		userID,
 	).Scan(&n)
 	if err != nil {

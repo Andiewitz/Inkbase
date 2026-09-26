@@ -18,7 +18,15 @@ type DocumentStore interface {
 	// is not newer than baseUpdatedAt. It returns ErrDocumentConflict when
 	// a newer revision exists and leaves storage unmutated.
 	UpdateConditional(ctx context.Context, doc *Document, baseUpdatedAt time.Time) error
+	// Delete moves a document to recoverable trash (idempotent, nil for
+	// missing). Trashed documents are invisible to Get/ListMeta/Count.
 	Delete(ctx context.Context, userID int64, docID string) error
+	// Restore clears the trash mark and returns the document. Restoring an
+	// active document is a no-op success; missing documents yield
+	// ErrDocumentNotFound.
+	Restore(ctx context.Context, userID int64, docID string) (*Document, error)
+	// ListTrash returns metadata of trashed documents, newest trash first.
+	ListTrash(ctx context.Context, userID int64) ([]*DocumentMeta, error)
 	Count(ctx context.Context, userID int64) (int, error)
 }
 

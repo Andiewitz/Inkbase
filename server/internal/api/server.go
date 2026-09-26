@@ -46,6 +46,7 @@ func New() http.Handler {
 	mux.Handle("PUT /api/documents/{id}", generalLimiter(requireAuth(handleUpdateDocument(docSvc))))
 	mux.Handle("PATCH /api/documents/{id}", generalLimiter(requireAuth(handleUpdateDocument(docSvc))))
 	mux.Handle("DELETE /api/documents/{id}", generalLimiter(requireAuth(handleDeleteDocument(docSvc))))
+	mux.Handle("POST /api/documents/{id}/restore", generalLimiter(requireAuth(handleRestoreDocument(docSvc))))
 	mux.Handle("GET /api/documents/{id}/export", generalLimiter(requireAuth(handleExportDocument(docSvc))))
 
 	return mux

@@ -87,7 +87,7 @@ func (m *MemoryStore) Get(ctx context.Context, userID int64, docID string) (*Doc
 		return nil, ErrDocumentNotFound
 	}
 	doc, ok := userMap[docID]
-	if !ok {
+	if !ok || doc.DeletedAt != nil {
 		return nil, ErrDocumentNotFound
 	}
 	cp := *doc
@@ -104,6 +104,9 @@ func (m *MemoryStore) ListMeta(ctx context.Context, userID int64) ([]*DocumentMe
 	}
 	list := make([]*DocumentMeta, 0, len(userMap))
 	for _, doc := range userMap {
+		if doc.DeletedAt != nil {
+			continue
+		}
 		cp := *doc
 		list = append(list, MetaOf(&cp))
 	}
@@ -124,6 +127,9 @@ func (m *MemoryStore) Update(ctx context.Context, doc *Document) error {
 	if _, ok := userMap[doc.ID]; !ok {
 		return ErrDocumentNotFound
 	}
+	if userMap[doc.ID].DeletedAt != nil {
+		return ErrDocumentNotFound
+	}
 	cp := *doc
 	userMap[doc.ID] = &cp
 	return nil
@@ -140,7 +146,7 @@ func (m *MemoryStore) UpdateConditional(ctx context.Context, doc *Document, base
 		return ErrDocumentNotFound
 	}
 	stored, ok := userMap[doc.ID]
-	if !ok {
+	if !ok || stored.DeletedAt != nil {
 		return ErrDocumentNotFound
 	}
 	if stored.UpdatedAt.UTC().After(baseUpdatedAt.UTC()) {
@@ -159,8 +165,65 @@ func (m *MemoryStore) Delete(ctx context.Context, userID int64, docID string) er
 	if !ok {
 		return nil
 	}
-	delete(userMap, docID)
+	stored, ok := userMap[docID]
+	if !ok || stored.DeletedAt != nil {
+		return nil
+	}
+	cp := *stored
+	now := time.Now().UTC()
+	cp.DeletedAt = &now
+	userMap[docID] = &cp
 	return nil
+}
+
+// Restore clears the trash mark. Missing documents yield ErrDocumentNotFound;
+// active documents are returned unchanged (idempotent).
+func (m *MemoryStore) Restore(ctx context.Context, userID int64, docID string) (*Document, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	userMap, ok := m.docs[userID]
+	if !ok {
+		return nil, ErrDocumentNotFound
+	}
+	stored, ok := userMap[docID]
+	if !ok {
+		return nil, ErrDocumentNotFound
+	}
+	if stored.DeletedAt == nil {
+		cp := *stored
+		return &cp, nil
+	}
+	cp := *stored
+	cp.DeletedAt = nil
+	userMap[docID] = &cp
+	out := cp
+	return &out, nil
+}
+
+// ListTrash returns metadata of trashed documents, newest trash first.
+func (m *MemoryStore) ListTrash(ctx context.Context, userID int64) ([]*DocumentMeta, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	userMap, ok := m.docs[userID]
+	if !ok {
+		return []*DocumentMeta{}, nil
+	}
+	list := make([]*DocumentMeta, 0)
+	trashedAt := make(map[string]time.Time, len(userMap))
+	for _, doc := range userMap {
+		if doc.DeletedAt == nil {
+			continue
+		}
+		cp := *doc
+		list = append(list, MetaOf(&cp))
+		trashedAt[doc.ID] = *doc.DeletedAt
+	}
+	sort.Slice(list, func(i, j int) bool {
+		return trashedAt[list[i].ID].After(trashedAt[list[j].ID])
+	})
+	return list, nil
 }
 
 func (m *MemoryStore) Count(ctx context.Context, userID int64) (int, error) {
@@ -171,5 +234,11 @@ func (m *MemoryStore) Count(ctx context.Context, userID int64) (int, error) {
 	if !ok {
 		return 0, nil
 	}
-	return len(userMap), nil
+	n := 0
+	for _, doc := range userMap {
+		if doc.DeletedAt == nil {
+			n++
+		}
+	}
+	return n, nil
 }

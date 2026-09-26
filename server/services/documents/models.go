@@ -82,6 +82,9 @@ type Document struct {
 	Branch    BranchInfo     `json:"branch"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
+	// DeletedAt marks recoverable trash. Nil = active. Omitted from JSON
+	// when nil so active documents keep their existing wire shape.
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 }
 
 // DocumentMeta is the card-grid projection of a Document: everything except

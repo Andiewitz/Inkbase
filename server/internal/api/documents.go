@@ -26,6 +26,20 @@ func handleListDocuments(svc *documents.Service) http.HandlerFunc {
 			return
 		}
 
+		if r.URL.Query().Get("trash") == "1" {
+			// Recovery listing: trashed metadata only, same envelope shape.
+			trash, terr := svc.ListTrash(r.Context(), userID)
+			if terr != nil {
+				shared.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not list documents"})
+				return
+			}
+			shared.WriteJSON(w, http.StatusOK, map[string]any{
+				"documents": trash,
+				"limit":     documents.FreeTierLimit,
+			})
+			return
+		}
+
 		docs, err := svc.ListMeta(r.Context(), userID)
 		if err != nil {
 			shared.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not list documents"})
@@ -219,6 +233,36 @@ func handleDeleteDocument(svc *documents.Service) http.HandlerFunc {
 		}
 
 		shared.WriteJSON(w, http.StatusOK, map[string]bool{"ok": true})
+	}
+}
+
+func handleRestoreDocument(svc *documents.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := UserIDFromContext(r.Context())
+		if !ok {
+			shared.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "not authenticated"})
+			return
+		}
+
+		docID := r.PathValue("id")
+		if docID == "" {
+			shared.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "missing document id"})
+			return
+		}
+
+		doc, err := svc.Restore(r.Context(), userID, docID)
+		if errors.Is(err, documents.ErrDocumentNotFound) {
+			shared.WriteJSON(w, http.StatusNotFound, map[string]string{"error": "document not found"})
+			return
+		}
+		if err != nil {
+			shared.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not restore document"})
+			return
+		}
+
+		shared.WriteJSON(w, http.StatusOK, map[string]any{
+			"document": doc,
+		})
 	}
 }
 
