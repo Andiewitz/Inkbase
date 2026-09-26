@@ -14,6 +14,7 @@ import (
 
 	"inkbase/server/internal/api"
 	"inkbase/server/services/documents"
+	docdb "inkbase/server/services/documents/db"
 )
 
 // ---------------------------------------------------------------------------
@@ -21,7 +22,7 @@ import (
 // ---------------------------------------------------------------------------
 
 func TestListMetaExcludesBody(t *testing.T) {
-	svc := documents.NewServiceWithStore(documents.NewMemoryStore())
+	svc := documents.NewServiceWithStore(docdb.NewMemoryStore())
 	ctx := context.Background()
 	userID := freshUserID()
 

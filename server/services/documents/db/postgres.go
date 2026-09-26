@@ -1,4 +1,4 @@
-package documents
+package docdb
 
 import (
 	"context"
@@ -89,7 +89,7 @@ func (s *PostgresStore) Get(ctx context.Context, userID int64, docID string) (*D
 		&doc.WordCount, &doc.Format, &branchJSON,
 		&doc.CreatedAt, &doc.UpdatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if isNotFound(err) {
 		return nil, ErrDocumentNotFound
 	}
 	if err != nil {
@@ -180,7 +180,7 @@ func (s *PostgresStore) UpdateConditional(ctx context.Context, doc *Document, ba
 		`SELECT updated_at FROM documents WHERE user_id = $1 AND id = $2 AND deleted_at IS NULL FOR UPDATE`,
 		doc.UserID, doc.ID,
 	).Scan(&storedUpdatedAt)
-	if err == sql.ErrNoRows {
+	if isNotFound(err) {
 		return ErrDocumentNotFound
 	}
 	if err != nil {

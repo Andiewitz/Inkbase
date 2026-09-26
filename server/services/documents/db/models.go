@@ -1,4 +1,4 @@
-package documents
+package docdb
 
 import (
 	"errors"

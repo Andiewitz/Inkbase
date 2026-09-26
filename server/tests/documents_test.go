@@ -15,6 +15,7 @@ import (
 
 	"inkbase/server/internal/api"
 	"inkbase/server/services/documents"
+	docdb "inkbase/server/services/documents/db"
 )
 
 func TestDocumentFormats_Roundtrip(t *testing.T) {
@@ -66,7 +67,7 @@ func TestDocumentFormats_Roundtrip(t *testing.T) {
 
 func TestDocumentService_CRUD_And_TierLimits(t *testing.T) {
 	ctx := context.Background()
-	store := documents.NewMemoryStore()
+	store := docdb.NewMemoryStore()
 	svc := documents.NewServiceWithStore(store)
 
 	userID := int64(42)

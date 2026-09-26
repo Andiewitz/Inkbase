@@ -14,6 +14,7 @@ import (
 
 	"inkbase/server/internal/api"
 	"inkbase/server/services/documents"
+	docdb "inkbase/server/services/documents/db"
 )
 
 // ---------------------------------------------------------------------------
@@ -21,7 +22,7 @@ import (
 // ---------------------------------------------------------------------------
 
 func TestTrashRestoreRoundtrip(t *testing.T) {
-	svc := documents.NewServiceWithStore(documents.NewMemoryStore())
+	svc := documents.NewServiceWithStore(docdb.NewMemoryStore())
 	ctx := context.Background()
 	userID := freshUserID()
 
@@ -72,7 +73,7 @@ func TestTrashRestoreRoundtrip(t *testing.T) {
 }
 
 func TestRestoreActiveIsIdempotent(t *testing.T) {
-	svc := documents.NewServiceWithStore(documents.NewMemoryStore())
+	svc := documents.NewServiceWithStore(docdb.NewMemoryStore())
 	ctx := context.Background()
 	userID := freshUserID()
 
@@ -87,7 +88,7 @@ func TestRestoreActiveIsIdempotent(t *testing.T) {
 }
 
 func TestRestoreMissingIsNotFound(t *testing.T) {
-	svc := documents.NewServiceWithStore(documents.NewMemoryStore())
+	svc := documents.NewServiceWithStore(docdb.NewMemoryStore())
 	ctx := context.Background()
 
 	if _, err := svc.Restore(ctx, freshUserID(), "nope"); !errors.Is(err, documents.ErrDocumentNotFound) {
@@ -96,7 +97,7 @@ func TestRestoreMissingIsNotFound(t *testing.T) {
 }
 
 func TestTrashIsOwnerScoped(t *testing.T) {
-	svc := documents.NewServiceWithStore(documents.NewMemoryStore())
+	svc := documents.NewServiceWithStore(docdb.NewMemoryStore())
 	ctx := context.Background()
 	owner, other := freshUserID(), freshUserID()
 
@@ -121,7 +122,7 @@ func TestTrashIsOwnerScoped(t *testing.T) {
 }
 
 func TestUpdateTrashedIsNotFound(t *testing.T) {
-	svc := documents.NewServiceWithStore(documents.NewMemoryStore())
+	svc := documents.NewServiceWithStore(docdb.NewMemoryStore())
 	ctx := context.Background()
 	userID := freshUserID()
 
@@ -139,7 +140,7 @@ func TestUpdateTrashedIsNotFound(t *testing.T) {
 }
 
 func TestDeleteFreesQuota(t *testing.T) {
-	svc := documents.NewServiceWithStore(documents.NewMemoryStore())
+	svc := documents.NewServiceWithStore(docdb.NewMemoryStore())
 	ctx := context.Background()
 	userID := freshUserID()
 

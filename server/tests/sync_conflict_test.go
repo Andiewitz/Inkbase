@@ -15,6 +15,7 @@ import (
 
 	"inkbase/server/internal/api"
 	"inkbase/server/services/documents"
+	docdb "inkbase/server/services/documents/db"
 )
 
 // ---------------------------------------------------------------------------
@@ -30,7 +31,7 @@ func strPtr(s string) *string {
 // returns 409 Conflict with the canonical document to prevent silent data loss.
 func TestSyncServerSourceOfTruthRejectsStaleWrite(t *testing.T) {
 	ctx := context.Background()
-	store := documents.NewMemoryStore()
+	store := docdb.NewMemoryStore()
 	svc := documents.NewServiceWithStore(store)
 
 	const userID int64 = 1
@@ -86,7 +87,7 @@ func TestSyncServerSourceOfTruthRejectsStaleWrite(t *testing.T) {
 // Client B receives the canonical server state, resyncs, and can then cleanly submit new changes.
 func TestSyncResyncWorkflow(t *testing.T) {
 	ctx := context.Background()
-	store := documents.NewMemoryStore()
+	store := docdb.NewMemoryStore()
 	svc := documents.NewServiceWithStore(store)
 
 	const userID int64 = 1
@@ -240,7 +241,7 @@ func TestHTTPUpdateConflictEndpoint(t *testing.T) {
 // and N-1 conflicts, with the survivor fully persisted.
 func TestSyncConcurrentWritersSingleWinner(t *testing.T) {
 	ctx := context.Background()
-	store := documents.NewMemoryStore()
+	store := docdb.NewMemoryStore()
 	svc := documents.NewServiceWithStore(store)
 
 	const userID int64 = 424242

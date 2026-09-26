@@ -16,6 +16,7 @@ import (
 
 	"inkbase/server/internal/api"
 	"inkbase/server/services/documents"
+	docdb "inkbase/server/services/documents/db"
 )
 
 // ---------------------------------------------------------------------------
@@ -48,7 +49,7 @@ func craftZip(t *testing.T, entries map[string][]byte) []byte {
 }
 
 func TestImportRejectsOversizedFile(t *testing.T) {
-	svc := documents.NewServiceWithStore(documents.NewMemoryStore())
+	svc := documents.NewServiceWithStore(docdb.NewMemoryStore())
 	userID := freshUserID()
 
 	big := bytes.NewReader(bytes.Repeat([]byte("a"), 11<<20)) // 11MB > 10MB cap
@@ -62,7 +63,7 @@ func TestImportRejectsOversizedFile(t *testing.T) {
 }
 
 func TestImportRejectsDecompressionBomb(t *testing.T) {
-	svc := documents.NewServiceWithStore(documents.NewMemoryStore())
+	svc := documents.NewServiceWithStore(docdb.NewMemoryStore())
 	userID := freshUserID()
 
 	// 2MB of zeros compresses to ~2KB: ratio ~1000:1 trips the tripwire.
@@ -79,7 +80,7 @@ func TestImportRejectsDecompressionBomb(t *testing.T) {
 }
 
 func TestImportRejectsTooManyEntries(t *testing.T) {
-	svc := documents.NewServiceWithStore(documents.NewMemoryStore())
+	svc := documents.NewServiceWithStore(docdb.NewMemoryStore())
 	userID := freshUserID()
 
 	entries := make(map[string][]byte, 210)
@@ -97,7 +98,7 @@ func TestImportRejectsTooManyEntries(t *testing.T) {
 }
 
 func TestImportRejectsCorruptArchive(t *testing.T) {
-	svc := documents.NewServiceWithStore(documents.NewMemoryStore())
+	svc := documents.NewServiceWithStore(docdb.NewMemoryStore())
 	userID := freshUserID()
 
 	// Invalid UTF-8 with a .docx name: not parseable as anything.
@@ -112,7 +113,7 @@ func TestImportRejectsCorruptArchive(t *testing.T) {
 }
 
 func TestImportRejectsEmptyFile(t *testing.T) {
-	svc := documents.NewServiceWithStore(documents.NewMemoryStore())
+	svc := documents.NewServiceWithStore(docdb.NewMemoryStore())
 	userID := freshUserID()
 
 	_, err := svc.Import(context.Background(), userID, "empty.txt", strings.NewReader("   \n  "))
@@ -125,7 +126,7 @@ func TestImportRejectsEmptyFile(t *testing.T) {
 }
 
 func TestImportRejectsUnknownBinaryFormat(t *testing.T) {
-	svc := documents.NewServiceWithStore(documents.NewMemoryStore())
+	svc := documents.NewServiceWithStore(docdb.NewMemoryStore())
 	userID := freshUserID()
 
 	blob := bytes.Repeat([]byte{0xff, 0xfe, 0x00, 0x01}, 64)
@@ -139,7 +140,7 @@ func TestImportRejectsUnknownBinaryFormat(t *testing.T) {
 }
 
 func TestImportSniffsPlainTextWithOddExtension(t *testing.T) {
-	svc := documents.NewServiceWithStore(documents.NewMemoryStore())
+	svc := documents.NewServiceWithStore(docdb.NewMemoryStore())
 	userID := freshUserID()
 
 	doc, err := svc.Import(context.Background(), userID, "notes.log", strings.NewReader("plain notes here"))
