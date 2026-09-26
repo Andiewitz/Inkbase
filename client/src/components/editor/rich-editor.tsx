@@ -4,7 +4,8 @@ import React from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
-import { useAutoSave, type SaveStatus } from "./use-autosave";
+import { useAutoSave, type SaveStatus, type ConflictDetail } from "./use-autosave";
+import { ConflictResolve } from "./conflict-resolve";
 
 interface RichEditorProps {
   docId: string;
@@ -97,6 +98,14 @@ export function RichEditor({
     [onSaveStatusChange],
   );
 
+  // Conflict state lives here, next to the resolution UI. The save hook only
+  // reports 409s via onConflict and exposes rebase/acknowledge primitives —
+  // nothing is applied or discarded until the author chooses below.
+  const [conflict, setConflict] = React.useState<ConflictDetail | null>(null);
+  const handleConflict = React.useCallback((c: ConflictDetail) => {
+    setConflict(c);
+  }, []);
+
   const initialHtml = React.useMemo(() => {
     return formatContentToHtml(initialContent);
   }, [initialContent]);
@@ -129,31 +138,47 @@ export function RichEditor({
     if (editor) onEditorReady?.(editor);
   }, [editor, onEditorReady]);
 
-  // Handle server-authority conflict resync
-  const handleConflictResync = React.useCallback(
-    (canonicalContent: string) => {
-      if (editor) {
-        editor.commands.setContent(formatContentToHtml(canonicalContent));
-        onResynced?.();
-      }
-    },
-    [editor, onResynced],
-  );
-
-  // Wire debounced auto-save with server reconciliation
-  useAutoSave(
+  // Wire debounced auto-save with explicit conflict resolution
+  const { resolveKeepMine, acknowledgeServer } = useAutoSave(
     editor,
     docId,
     initialServerUpdatedAt,
     true,
     handleSaveStatus,
-    handleConflictResync,
+    handleConflict,
   );
 
+  // Non-destructive conflict handling: nothing is applied until the author
+  // chooses. "Take server" applies the canonical content; "keep mine"
+  // re-saves the untouched local candidate on top of the server revision.
+  const handleTakeServer = React.useCallback(() => {
+    if (editor && conflict) {
+      editor.commands.setContent(formatContentToHtml(conflict.serverContent));
+      acknowledgeServer(editor.getHTML(), conflict.serverUpdatedAt);
+      setConflict(null);
+      onResynced?.();
+    }
+  }, [editor, conflict, acknowledgeServer, onResynced]);
+
+  const handleKeepMine = React.useCallback(() => {
+    if (!conflict) return;
+    resolveKeepMine(conflict.serverUpdatedAt);
+    setConflict(null);
+  }, [conflict, resolveKeepMine]);
+
   return (
-    <EditorContent
-      editor={editor}
-      className="h-full w-full"
-    />
+    <>
+      {conflict && (
+        <ConflictResolve
+          serverUpdatedAt={conflict.serverUpdatedAt}
+          onKeepMine={handleKeepMine}
+          onTakeServer={handleTakeServer}
+        />
+      )}
+      <EditorContent
+        editor={editor}
+        className="h-full w-full"
+      />
+    </>
   );
 }

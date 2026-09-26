@@ -109,8 +109,8 @@ export function EditorShell({
             )}
             {saveStatus === "conflict" && (
               <>
-                <CheckCircle2 className="h-3.5 w-3.5 text-amber-500" />
-                <span className="text-amber-600 font-semibold">Resynced with cloud</span>
+                <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                <span className="text-amber-600 font-semibold">Conflict — action needed</span>
               </>
             )}
             {saveStatus === "error" && (

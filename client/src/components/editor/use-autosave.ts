@@ -6,12 +6,27 @@ import { apiFetch } from "@/lib/api";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "conflict" | "error";
 
+export interface ConflictDetail {
+  /** Unsaved local HTML at the moment the server rejected the write. Never discarded automatically. */
+  localHtml: string;
+  /** Canonical server content from the 409 response. */
+  serverContent: string;
+  /** Canonical server updated_at from the 409 response. */
+  serverUpdatedAt?: string;
+}
+
 interface LocalDraftBackup {
   docId: string;
   text: string;
   html: string;
   clientTimestamp: string;
   baseUpdatedAt?: string;
+}
+
+interface SavePayload {
+  content: string;
+  word_count: number;
+  base_updated_at?: string;
 }
 
 /**
@@ -22,7 +37,7 @@ interface LocalDraftBackup {
  * - In-flight mutex queue preventing overlapping concurrent saves
  * - Client-side timestamped local backup in localStorage
  * - Optimistic concurrency check (base_updated_at): server is source of truth
- * - Automatic resync on 409 conflict without data loss
+ * - Explicit conflict resolution on 409 — local work is never auto-discarded
  */
 export function useAutoSave(
   editor: Editor | null,
@@ -30,7 +45,7 @@ export function useAutoSave(
   initialServerUpdatedAt: string | undefined,
   enabled: boolean,
   onStatusChange: (s: SaveStatus) => void,
-  onConflictResync?: (canonicalContent: string) => void,
+  onConflict?: (c: ConflictDetail) => void,
 ) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedHtmlRef = useRef<string>("");
@@ -70,6 +85,14 @@ export function useAutoSave(
     }
   }, [docId]);
 
+  // NOTE(react-compiler): manual memoization below is intentional.
+  // performSave's identity must stay stable across renders: it is wired to
+  // the Tiptap editor's `update` event via scheduleSave, and an unstable
+  // identity would duplicate subscriptions on every keystroke render. The
+  // compiler skips this hook because the explicit conflict resolvers
+  // reschedule saves through timers — accepted, since skipping only forgoes
+  // auto-memoization while runtime useCallback semantics are unchanged.
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const performSave = useCallback(async () => {
     if (!editor || !docId || isSavingRef.current) return;
 
@@ -91,7 +114,7 @@ export function useAutoSave(
 
     try {
       // Save rich HTML so headings, bold, italics, spacing, lists, and indents are preserved!
-      const payload: Record<string, any> = {
+      const payload: SavePayload = {
         content: html,
         word_count: text.split(/\s+/).filter(Boolean).length,
       };
@@ -107,14 +130,18 @@ export function useAutoSave(
       });
 
       if (res.status === 409) {
-        // Server is ahead! Server is the source of truth.
+        // Server is ahead. Preserve everything: keep the local backup, keep
+        // lastSavedHtmlRef untouched, leave editor content alone. The author
+        // resolves explicitly via the conflict UI.
         const data = await res.json().catch(() => ({}));
         if (data.document) {
-          serverUpdatedAtRef.current = data.document.updated_at;
-          lastSavedHtmlRef.current = data.document.content || "";
-          clearLocalBackup();
+          const detail: ConflictDetail = {
+            localHtml: html,
+            serverContent: data.document.content || "",
+            serverUpdatedAt: data.document.updated_at,
+          };
           onStatusChange("conflict");
-          onConflictResync?.(data.document.content || "");
+          onConflict?.(detail);
         } else {
           onStatusChange("error");
         }
@@ -138,7 +165,47 @@ export function useAutoSave(
         performSave();
       }
     }
-  }, [editor, docId, onStatusChange, onConflictResync, saveLocalBackup, clearLocalBackup]);
+  }, [editor, docId, onStatusChange, onConflict, saveLocalBackup, clearLocalBackup]);
+
+  /**
+   * Explicit "keep mine": rebase the local candidate onto the server revision
+   * and retry immediately. The next write carries the server's updated_at as
+   * base, so local content wins by explicit author choice — never silently.
+   * Same scheduling shape as scheduleSave below (proven safe for the React
+   * Compiler config used here).
+   */
+  const resolveKeepMine = useCallback(
+    (serverUpdatedAt?: string) => {
+      if (serverUpdatedAt) {
+        serverUpdatedAtRef.current = serverUpdatedAt;
+      }
+      pendingSaveRef.current = true;
+      onStatusChange("saving");
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        performSave();
+      }, 0);
+    },
+    [onStatusChange, performSave],
+  );
+
+  /**
+   * Called by the editor after it applies the server content for "take
+   * server". Records the new baseline and drops the local backup. No save is
+   * triggered: applied content equals the new baseline, so future saves skip
+   * until the author types again.
+   */
+  const acknowledgeServer = useCallback(
+    (appliedHtml: string, serverUpdatedAt?: string) => {
+      if (serverUpdatedAt) {
+        serverUpdatedAtRef.current = serverUpdatedAt;
+      }
+      lastSavedHtmlRef.current = appliedHtml;
+      clearLocalBackup();
+      onStatusChange("saved");
+    },
+    [clearLocalBackup, onStatusChange],
+  );
 
   // Schedule debounced save
   const scheduleSave = useCallback(() => {
@@ -172,4 +239,6 @@ export function useAutoSave(
       }
     };
   }, [performSave]);
+
+  return { resolveKeepMine, acknowledgeServer };
 }
